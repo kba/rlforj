@@ -8,6 +8,8 @@ import rlforj.los.ILosBoard;
 import rlforj.math.Point2I;
 
 /**
+ * TODO: Not yet incorporated, not yet working.
+ * 
  * Casts rays from a single point through a {@link World} object, which describes 
  * impassable locations. Fills in a 2D array of {@link RayData} objects, 
  * describing the visibility status of each point in the world as viewed from the 
