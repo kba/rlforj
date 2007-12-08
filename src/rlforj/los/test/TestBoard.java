@@ -1,6 +1,8 @@
 package rlforj.los.test;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import rlforj.los.ILosBoard;
@@ -19,11 +21,19 @@ public class TestBoard implements ILosBoard
 
 	public Set<Point2I> visiterr = new HashSet<Point2I>();
 
-	public TestBoard(boolean def)
+	public Set<Point2I> prjPath = new HashSet<Point2I>();
+	
+	public Map<Point2I, Character> marks = new HashMap<Point2I, Character>();
+	
+	public TestBoard(boolean defaultObscured)
 	{
-		this.def = def;
+		this.def = defaultObscured;
 	}
 
+	public void mark(int x, int y, char c) {
+		marks.put(new Point2I(x, y), c);
+	}
+	
 	public boolean contains(int x, int y)
 	{
 		return true;
@@ -47,16 +57,22 @@ public class TestBoard implements ILosBoard
 
 	public void print(int fromx, int tox, int fromy, int toy)
 	{
-		for (int x = fromx; x <= tox; x++)
+		for (int y = fromy; y <= toy; y++)
 		{
-			for (int y = fromy; y <= toy; y++)
+			for (int x = fromx; x <= tox; x++)
 			{
-				if (isObstacle(x, y))
-					System.out.print(visited.contains(new Point2I(x, y)) ? "X"
-							: "#");
-				else
-					System.out.print(visited.contains(new Point2I(x, y)) ? "O"
-							: "*");
+				Point2I point = new Point2I(x, y);
+				Character c=marks.get(point);
+				if(c==null) {
+					if (isObstacle(x, y))
+						c=(visited.contains(point) ? '#'
+								: 'x');
+					else {
+						c=(visited.contains(point) ? 'o'
+								: '.');
+					}
+				}
+				System.out.print(c);
 			}
 			System.out.println();
 		}

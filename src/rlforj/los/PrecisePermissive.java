@@ -7,6 +7,7 @@ import java.util.Set;
 import java.util.Vector;
 
 import rlforj.math.Point2I;
+import rlforj.util.Pair;
 
 /**
  * {@link http://roguebasin.roguelikedevelopment.org/index.php?title=Precise_Permissive_Field_of_View}
@@ -180,6 +181,10 @@ public class PrecisePermissive implements IFovAlgorithm, ILosAlgorithm
 		bumpT steepBump;
 
 		bumpT shallowBump;
+		
+		public String toString() {
+			return "[ "+steep+",  "+shallow+"]";
+		}
 	}
 
 	private Vector<Integer> pathx;
@@ -233,12 +238,12 @@ public class PrecisePermissive implements IFovAlgorithm, ILosAlgorithm
 		}
 	}
 
-	private int max(int i, int j)
+	private final int max(int i, int j)
 	{
 		return i > j ? i : j;
 	}
 
-	private int min(int i, int j)
+	private final int min(int i, int j)
 	{
 		return i < j ? i : j;
 	}
@@ -511,7 +516,7 @@ public class PrecisePermissive implements IFovAlgorithm, ILosAlgorithm
 		int adx = dx > 0 ? dx : -dx;
 		int dy = y1 - startY;
 		int ady = dy > 0 ? dy : -dy;
-		FakeLosBoard fb = new FakeLosBoard(b, startX, startY, x1, y1,
+		RecordVisitBoard fb = new RecordVisitBoard(b, startX, startY, x1, y1,
 				calculateProject);
 		mask.east = mask.west = adx;
 		mask.north = mask.south = ady;
@@ -602,150 +607,153 @@ public class PrecisePermissive implements IFovAlgorithm, ILosAlgorithm
 
 		if (calculateProject)
 		{
-			calculateProjecton(startX, startY, adx, ady, fb, state);
+			Pair<Vector<Integer>, Vector<Integer>> ret = GenericCalculateProjection.calculateProjecton(startX, startY, x1, y1, fb);
+			pathx=ret.e1;
+			pathy=ret.e2;
+//			calculateProjecton(startX, startY, adx, ady, fb, state);
 		}
 		return fb.endVisited;
 	}
 
-	/**
-	 * @param startX
-	 * @param startY
-	 * @param adx
-	 * @param ady
-	 * @param fb
-	 * @param state
-	 */
-	private void calculateProjecton(int startX, int startY, int adx, int ady,
-			FakeLosBoard fb, fovStateT state)
-	{
-		pathx = new Vector<Integer>();
-		pathy = new Vector<Integer>();
-		boolean axesSwapped = false;
-		if (adx < ady)
-		{
-			axesSwapped = true;
-			final int tmp = adx;
-			adx = ady;
-			ady = tmp;
-		}
-
-		// System.out.println("adx ady "+adx+" "+ady);
-		int incE = 2 * ady;
-		int incNE = 2 * ady - 2 * adx;
-		int d = 2 * ady - adx;
-		Point2I p = new Point2I(0, 0);
-		int lasti = 0, lastj = 0;
-		int j = 0;
-		int signX = state.quadrant.x, signY = state.quadrant.y;
-		for (int i = 0; i <= adx;)
-		{
-			// System.out.println(i+" "+j);
-			if (axesSwapped)
-			{
-				pathx.add(j * signX + startX);
-				pathy.add(i * signY + startY);
-			} else
-			{
-				pathx.add(i * signX + startX);
-				pathy.add(j * signY + startY);
-			}
-			lasti = i;
-			lastj = j;
-			boolean ippNotrecommended = false;
-			if (d <= 0)
-			{
-				// try to just inc x
-				if (axesSwapped)
-				{
-					p.y = i + 1;
-					p.x = j;
-				} else
-				{
-					p.x = i + 1;
-					p.y = j;
-				}
-				if (fb.visitedNotObs.contains(p))
-				{
-					d += incE;
-					i++;
-					continue;
-				}
-				// System.out.println("cannot i++ "+p+"
-				// "+fb.visitedNotObs.contains(p));
-			} else
-			{
-				// System.out.println("i++ not recommended ");
-				ippNotrecommended = true;
-			}
-
-			// try to inc x and y
-			if (axesSwapped)
-			{
-				p.y = i + 1;
-				p.x = j + 1;
-			} else
-			{
-				p.x = i + 1;
-				p.y = j + 1;
-			}
-			if (fb.visitedNotObs.contains(p))
-			{
-				d += incNE;
-				j++;
-				i++;
-				continue;
-			}
-			// System.out.println("cannot i++ j++ "+p+"
-			// "+fb.visitedNotObs.contains(p));
-			if (ippNotrecommended)
-			{ // try it even if not recommended
-				if (axesSwapped)
-				{
-					p.y = i + 1;
-					p.x = j;
-				} else
-				{
-					p.x = i + 1;
-					p.y = j;
-				}
-				if (fb.visitedNotObs.contains(p))
-				{
-					d += incE;
-					i++;
-					continue;
-				}
-				// System.out.println("cannot i++ "+p+"
-				// "+fb.visitedNotObs.contains(p));
-			}
-			// last resort
-			// try to inc just y
-			if (axesSwapped)
-			{
-				p.y = i;
-				p.x = j + 1;
-			} else
-			{
-				p.x = i;
-				p.y = j + 1;
-			}
-			if (fb.visitedNotObs.contains(p))
-			{
-				if (lasti == i - 1 && lastj == j)// last step was 1 to the
-					// right
-					System.out.println("<<-");// this step is 1 step to up,
-				// together 1 diagonal
-				// => we dont need last point
-				d += -incE + incNE;// as if we went 1 step left then took 1
-				// step up right
-				j++;
-				continue;
-			}
-			// System.out.println("cannot j++ "+p+"
-			// "+fb.visitedNotObs.contains(p));
-			// no path, end here.
-			break;
-		}
-	}
+//	/**
+//	 * @param startX
+//	 * @param startY
+//	 * @param adx
+//	 * @param ady
+//	 * @param fb
+//	 * @param state
+//	 */
+//	private void calculateProjecton(int startX, int startY, int adx, int ady,
+//			FakeLosBoard fb, fovStateT state)
+//	{
+//		pathx = new Vector<Integer>();
+//		pathy = new Vector<Integer>();
+//		boolean axesSwapped = false;
+//		if (adx < ady)
+//		{
+//			axesSwapped = true;
+//			final int tmp = adx;
+//			adx = ady;
+//			ady = tmp;
+//		}
+//
+//		// System.out.println("adx ady "+adx+" "+ady);
+//		int incE = 2 * ady;
+//		int incNE = 2 * ady - 2 * adx;
+//		int d = 2 * ady - adx;
+//		Point2I p = new Point2I(0, 0);
+//		int lasti = 0, lastj = 0;
+//		int j = 0;
+//		int signX = state.quadrant.x, signY = state.quadrant.y;
+//		for (int i = 0; i <= adx;)
+//		{
+//			// System.out.println(i+" "+j);
+//			if (axesSwapped)
+//			{
+//				pathx.add(j * signX + startX);
+//				pathy.add(i * signY + startY);
+//			} else
+//			{
+//				pathx.add(i * signX + startX);
+//				pathy.add(j * signY + startY);
+//			}
+//			lasti = i;
+//			lastj = j;
+//			boolean ippNotrecommended = false;
+//			if (d <= 0)
+//			{
+//				// try to just inc x
+//				if (axesSwapped)
+//				{
+//					p.y = i + 1;
+//					p.x = j;
+//				} else
+//				{
+//					p.x = i + 1;
+//					p.y = j;
+//				}
+//				if (fb.visitedNotObs.contains(p))
+//				{
+//					d += incE;
+//					i++;
+//					continue;
+//				}
+//				// System.out.println("cannot i++ "+p+"
+//				// "+fb.visitedNotObs.contains(p));
+//			} else
+//			{
+//				// System.out.println("i++ not recommended ");
+//				ippNotrecommended = true;
+//			}
+//
+//			// try to inc x and y
+//			if (axesSwapped)
+//			{
+//				p.y = i + 1;
+//				p.x = j + 1;
+//			} else
+//			{
+//				p.x = i + 1;
+//				p.y = j + 1;
+//			}
+//			if (fb.visitedNotObs.contains(p))
+//			{
+//				d += incNE;
+//				j++;
+//				i++;
+//				continue;
+//			}
+//			// System.out.println("cannot i++ j++ "+p+"
+//			// "+fb.visitedNotObs.contains(p));
+//			if (ippNotrecommended)
+//			{ // try it even if not recommended
+//				if (axesSwapped)
+//				{
+//					p.y = i + 1;
+//					p.x = j;
+//				} else
+//				{
+//					p.x = i + 1;
+//					p.y = j;
+//				}
+//				if (fb.visitedNotObs.contains(p))
+//				{
+//					d += incE;
+//					i++;
+//					continue;
+//				}
+//				// System.out.println("cannot i++ "+p+"
+//				// "+fb.visitedNotObs.contains(p));
+//			}
+//			// last resort
+//			// try to inc just y
+//			if (axesSwapped)
+//			{
+//				p.y = i;
+//				p.x = j + 1;
+//			} else
+//			{
+//				p.x = i;
+//				p.y = j + 1;
+//			}
+//			if (fb.visitedNotObs.contains(p))
+//			{
+//				if (lasti == i - 1 && lastj == j)// last step was 1 to the
+//					// right
+//					System.out.println("<<-");// this step is 1 step to up,
+//				// together 1 diagonal
+//				// => we dont need last point
+//				d += -incE + incNE;// as if we went 1 step left then took 1
+//				// step up right
+//				j++;
+//				continue;
+//			}
+//			// System.out.println("cannot j++ "+p+"
+//			// "+fb.visitedNotObs.contains(p));
+//			// no path, end here.
+//			break;
+//		}
+//	}
 
 	/*
 	 * (non-Javadoc)
@@ -783,60 +791,5 @@ public class PrecisePermissive implements IFovAlgorithm, ILosAlgorithm
 //		System.out.println(b.visited);
 //	}
 
-	class FakeLosBoard implements ILosBoard
-	{
 
-		ILosBoard b;
-
-		int sx, sy, sxy;
-
-		int dx, dy;
-
-		// int manhattanDist;
-		Set<Point2I> visitedNotObs = new HashSet<Point2I>();
-
-		boolean endVisited = false;
-
-		boolean calculateProject;
-
-		public FakeLosBoard(ILosBoard b, int sx, int sy, int dx, int dy,
-				boolean calculateProject)
-		{
-			super();
-			this.b = b;
-			this.sx = sx;
-			this.sy = sy;
-			sxy = sx + sy;
-			this.dx = dx;
-			this.dy = dy;
-
-			this.calculateProject = calculateProject;
-		}
-
-		public boolean contains(int x, int y)
-		{
-			return b.contains(x, y);
-		}
-
-		public boolean isObstacle(int x, int y)
-		{
-			return b.isObstacle(x, y);
-		}
-
-		public void visit(int x, int y)
-		{
-			//			System.out.println("visited "+x+" "+y);
-			if (x == dx && y == dy)
-				endVisited = true;
-			if (calculateProject && !b.isObstacle(x, y))
-			{
-				int dx = x - sx;
-				dx = dx > 0 ? dx : -dx;
-				int dy = y - sy;
-				dy = dy > 0 ? dy : -dy;
-				visitedNotObs.add(new Point2I(dx, dy));
-			}
-		}
-
-	}
 }

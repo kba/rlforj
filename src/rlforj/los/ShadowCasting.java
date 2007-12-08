@@ -7,10 +7,13 @@ import static java.lang.Math.floor;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import rlforj.math.Point2I;
+import rlforj.util.Pair;
 
 /**
  * Code adapted from NG roguelike engine http://roguelike-eng.sourceforge.net/
@@ -24,11 +27,13 @@ import rlforj.math.Point2I;
  * TODO : implement LOS
  * TODO : implement project
  */
-public class ShadowCasting implements IFovAlgorithm
+public class ShadowCasting implements IConeFovAlgorithm, ILosAlgorithm
 {
 
 	
 	public static final int MAX_CACHED_RADIUS = 40;
+	private Vector<Integer> pathy;
+	private Vector<Integer> pathx;
 	
 	/**
 	 * Compute and return the list of RLPoints in line-of-sight to the given
@@ -186,6 +191,104 @@ public class ShadowCasting implements IFovAlgorithm
 		}
 	}
 
+	
+	public boolean existsLineOfSight(ILosBoard b, int startX, int startY,
+			int x1, int y1, boolean calculateProject)
+	{
+		int dx = x1 - startX;
+		int dy = y1 - startY;
+		int signX, signY;
+		int adx, ady;
+
+		if(dx>0) {
+			adx=dx;
+			signX=1;
+		} else {
+			adx=-dx;
+			signX=-1;
+		}
+		if(dy>0) {
+			ady=dy;
+			signY=1;
+		} else {
+			ady=-dy;
+			signY=-1;
+		}
+		RecordVisitBoard fb = new RecordVisitBoard(b, startX, startY, x1, y1,
+				calculateProject);
+
+		Point2I p = new Point2I(startX, startY);
+		
+		if (startY==y1 && x1>startX) {
+			int distance=dx+1;
+			double deg1=Math.toDegrees(Math.atan2(.25, dx));//very thin angle
+			go(fb, p, 1, distance, -deg1, 0);
+			go(fb, p, 1, distance, 0, deg1);
+		} else {
+			int distance = (int) Math.sqrt(adx*adx+ady*ady)+1;
+			double deg1=Math.toDegrees(Math.atan2(-dy, (adx-.5)*signX));
+			if(deg1<0) deg1+=360;
+			double deg2=Math.toDegrees(Math.atan2(-(ady-.5)*signY, dx));
+			if(deg2<0) deg2+=360;
+			if(deg1>deg2) {double temp=deg1; deg1=deg2; deg2=temp;}
+			
+//			System.out.println("Locations "+(adx-1)*signX+" "+dy);
+//			System.out.println("Locations "+dx+" "+(ady-1)*signY);
+//			System.out.println("Degrees "+deg1+" "+deg2);
+			
+			go(fb, p, 1, distance, deg1, deg2);
+		}
+		
+		if (calculateProject)
+		{
+			Pair<Vector<Integer>, Vector<Integer>> ret = GenericCalculateProjection.calculateProjecton(startX, startY, x1, y1, fb);
+			pathx = ret.e1;
+			pathy=ret.e2;
+//			calculateProjecton(startX, startY, adx, ady, fb, state);
+		}
+		return fb.endVisited;
+	}
+
+	public List<Integer> getProjectPathX()
+	{
+		return pathx;
+	}
+
+	public List<Integer> getProjectPathY()
+	{
+		return pathy;
+	}
+
+	public void visitConeFieldOfView(ILosBoard b, int x, int y, int distance,
+			int startAngle, int finishAngle)
+	{
+		// Making Positive Y downwards
+		final int tmp=startAngle;
+		startAngle=-finishAngle;
+		finishAngle=-tmp;
+		
+		if(startAngle<0) {startAngle%=360; startAngle+=360; }
+		if(finishAngle<0) {finishAngle%=360; finishAngle+=360; }
+		
+		if(startAngle>360) startAngle%=360;
+		if(finishAngle>360) finishAngle%=360;
+//		System.out.println(startAngle+" "+finishAngle);
+		
+		if (b == null)
+			throw new IllegalArgumentException();
+		if (distance < 1)
+			throw new IllegalArgumentException();
+
+		Point2I p = new Point2I(x, y);
+		
+		if(startAngle>finishAngle) {
+			go(b, p, 1, distance, startAngle, 359.999);
+			go(b, p, 1, distance, 0.0, finishAngle);
+		}
+		else 
+			go(b, p, 1, distance, startAngle, finishAngle);
+	}
+	
 	static class ArcPoint implements Comparable
 	{
 		int x, y;
@@ -298,8 +401,9 @@ public class ShadowCasting implements IFovAlgorithm
 			// System.out.println("r: "+r+" "+list);
 		}
 
-		Logger.getLogger(ShadowCasting.class.getName()).log(Level.INFO,
-		 "Circles cached after " + (System.currentTimeMillis() - t1));
+//		Logger.getLogger(ShadowCasting.class.getName()).log(Level.INFO,
+//		 "Circles cached after " + (System.currentTimeMillis() - t1));
 	}
+
 
 }

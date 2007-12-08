@@ -2,9 +2,8 @@ package rlforj.los;
 
 import java.util.Vector;
 
-import rlforj.los.PrecisePermissive.FakeLosBoard;
-import rlforj.los.PrecisePermissive.fovStateT;
 import rlforj.math.Point2I;
+import rlforj.util.Pair;
 
 /**
  * Given a set of squares that we are allowed to visit, and two points
@@ -17,14 +16,33 @@ import rlforj.math.Point2I;
  */
 public class GenericCalculateProjection
 {
-	private Vector<Integer> pathx;
-	private Vector<Integer> pathy;
 
-	public void calculateProjecton(int startX, int startY, int adx, int ady,
-			VisitedBoard fb, fovStateT state)
+	public static Pair<Vector<Integer>, Vector<Integer>> calculateProjecton(int startX, int startY, int x1, int y1, 
+			VisitedBoard fb)
 	{
+		Vector<Integer> pathx;
+		Vector<Integer> pathy;
 		pathx = new Vector<Integer>();
 		pathy = new Vector<Integer>();
+		
+		int dx=x1-startX;
+		int dy=y1-startY;
+		int signX, signY;
+		int adx, ady;
+		if(dx>0) {
+			adx=dx;
+			signX=1;
+		} else {
+			adx=-dx;
+			signX=-1;
+		}
+		if(dy>0) {
+			ady=dy;
+			signY=1;
+		} else {
+			ady=-dy;
+			signY=-1;
+		}
 		boolean axesSwapped = false;
 		if (adx < ady)
 		{
@@ -41,16 +59,13 @@ public class GenericCalculateProjection
 		Point2I p = new Point2I(0, 0);
 		int lasti = 0, lastj = 0;
 		int j = 0;
-		int signX = state.quadrant.x, signY = state.quadrant.y;
 		for (int i = 0; i <= adx;)
 		{
-			// System.out.println(i+" "+j);
-			if (axesSwapped)
-			{
+//			 System.out.println(i+" "+j+" "+d);
+			if (axesSwapped) {
 				pathx.add(j * signX + startX);
 				pathy.add(i * signY + startY);
-			} else
-			{
+			} else {
 				pathx.add(i * signX + startX);
 				pathy.add(j * signY + startY);
 			}
@@ -150,6 +165,8 @@ public class GenericCalculateProjection
 			// no path, end here.
 			break;
 		}
+//		if(pathx.lastElement()!=x1 || pathy.lastElement()!=y1)
+		return new Pair<Vector<Integer>, Vector<Integer>>(pathx, pathy);
 	}
 	
 	public static interface VisitedBoard {
