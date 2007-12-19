@@ -25,7 +25,7 @@ public class ExampleBoard implements ILosBoard  {
 		visited = new boolean[w][h];
 	}
 	
-	public void reset()
+	public void resetVisitedAndMarks()
 	{
 		marks.clear();
 		visited = new boolean[w][h];

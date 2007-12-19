@@ -1,6 +1,5 @@
 package rlforj.los;
 
-import java.util.Iterator;
 import java.util.ListIterator;
 
 /**

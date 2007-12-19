@@ -1,12 +1,6 @@
 package rlforj.los;
 
-import java.util.Arrays;
 import java.util.LinkedList;
-
-import rlforj.los.PrecisePermissive.bumpT;
-import rlforj.los.PrecisePermissive.fieldT;
-import rlforj.los.PrecisePermissive.fovStateT;
-import rlforj.los.PrecisePermissive.offsetT;
 
 public class ConePrecisePremisive extends PrecisePermissive implements
 		IConeFovAlgorithm

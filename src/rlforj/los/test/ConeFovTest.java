@@ -2,8 +2,6 @@ package rlforj.los.test;
 
 import rlforj.los.ConePrecisePremisive;
 import rlforj.los.IConeFovAlgorithm;
-import rlforj.los.IFovAlgorithm;
-import rlforj.los.ILosAlgorithm;
 import rlforj.los.ShadowCasting;
 import rlforj.math.Point2I;
 

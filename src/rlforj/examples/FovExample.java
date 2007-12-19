@@ -28,7 +28,7 @@ public class FovExample
 		a.visitFieldOfView(b, 10, 10, 9);
 		b.print(10, 10);
 		
-		b.reset();
+		b.resetVisitedAndMarks();
 		System.out.println("Precise Permissive");
 		a=new PrecisePermissive();
 		a.visitFieldOfView(b, 10, 10, 10);

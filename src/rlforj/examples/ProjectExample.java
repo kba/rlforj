@@ -3,9 +3,12 @@ package rlforj.examples;
 import java.util.List;
 import java.util.Random;
 
+import rlforj.los.BresLos;
+import rlforj.los.BresOpportunisticLos;
 import rlforj.los.ILosAlgorithm;
 import rlforj.los.PrecisePermissive;
 import rlforj.los.ShadowCasting;
+import rlforj.math.Point2I;
 
 public class ProjectExample
 {
@@ -21,33 +24,48 @@ public class ProjectExample
 		b.invisibleFloor='.';
 		b.invisibleWall='#';
 		
-		System.out.println("ShadowCasting");
-		ILosAlgorithm a=new ShadowCasting();
-		boolean los=a.existsLineOfSight(b, 10, 10, x1, y1, true);
-		
-		List<Integer> pathx = a.getProjectPathX(), pathy=a.getProjectPathY();
-		markProjectPath(b, pathx, pathy);
-		b.mark(x1, y1, '*');
-		System.out.println("Los "+(los?"exists":"does not exist"));
-		b.print(10, 10);
-		
-		b.reset();
-		System.out.println("Precise Permissive");
-		a=new PrecisePermissive();
+		displayProjection(new ShadowCasting(), "Shadowcasting", b, x1, y1);
+		displayProjection(new PrecisePermissive(), "Precise Permissive", b, x1, y1);
+		displayProjection(new BresLos(), "Bresenham", b, x1, y1);
+		BresLos bl=new BresLos(); bl.SYMMETRIC_ENABLED=true;
+		displayProjection(bl, "Symmetric Bresenham", b, x1, y1);
+		displayProjection(new BresOpportunisticLos(), "Opportunistic Bresenham", b, x1, y1);
+	}
+
+	/**
+	 * @param algoName The name of the algorithm
+	 * @param a 
+	 * @param b
+	 * @param x1
+	 * @param y1
+	 */
+	private static void displayProjection(ILosAlgorithm a, String algoName, ExampleBoard b, int x1, int y1)
+	{
+		boolean los;
+		List<Point2I> path;
+		b.resetVisitedAndMarks();
+		System.out.println(algoName);
 		los=a.existsLineOfSight(b, 10, 10, x1, y1, true);
 		
-		pathx = a.getProjectPathX(); pathy=a.getProjectPathY();
-		markProjectPath(b, pathx, pathy);
-		b.mark(x1, y1, '*');
+		path = a.getProjectPath();
+		markProjectPath(b, path);
+		if(los)
+			b.mark(x1, y1, '*');
+		else
+			b.mark(x1, y1, '?');
+		
 		System.out.println("Los "+(los?"exists":"does not exist"));
 		b.print(10, 10);
 	}
 
-	private static void markProjectPath(ExampleBoard b, List<Integer> pathx, List<Integer> pathy)
+	private static void markProjectPath(ExampleBoard b, List<Point2I> path)
 	{
-		int lastx=pathx.get(0), lasty=pathy.get(0);
-		for(int i=1; i<pathx.size(); i++) {
-			int x=pathx.get(i), y=pathy.get(i);
+		if(path.size()<1) return;
+		
+		int lastx=path.get(0).x, lasty=path.get(0).y;
+		for(int i=1; i<path.size(); i++) {
+			Point2I p=path.get(i);
+			int x=p.x, y=p.y;
 			if(x!=lastx) {
 				if(y!=lasty) {
 					b.mark(x, y, ((x-lastx)*(y-lasty)>0)?'\\':'/');

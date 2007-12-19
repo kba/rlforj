@@ -3,7 +3,6 @@ package rlforj.los;
 import java.util.Vector;
 
 import rlforj.math.Point2I;
-import rlforj.util.Pair;
 
 /**
  * Given a set of squares that we are allowed to visit, and two points
@@ -17,13 +16,10 @@ import rlforj.util.Pair;
 public class GenericCalculateProjection
 {
 
-	public static Pair<Vector<Integer>, Vector<Integer>> calculateProjecton(int startX, int startY, int x1, int y1, 
+	public static Vector<Point2I> calculateProjecton(int startX, int startY, int x1, int y1, 
 			VisitedBoard fb)
 	{
-		Vector<Integer> pathx;
-		Vector<Integer> pathy;
-		pathx = new Vector<Integer>();
-		pathy = new Vector<Integer>();
+		Vector<Point2I> path= new Vector<Point2I>();
 		
 		int dx=x1-startX;
 		int dy=y1-startY;
@@ -63,11 +59,13 @@ public class GenericCalculateProjection
 		{
 //			 System.out.println(i+" "+j+" "+d);
 			if (axesSwapped) {
-				pathx.add(j * signX + startX);
-				pathy.add(i * signY + startY);
+				path.add(new Point2I(
+						(j * signX + startX),
+						(i * signY + startY)));
 			} else {
-				pathx.add(i * signX + startX);
-				pathy.add(j * signY + startY);
+				path.add(new Point2I(
+				(i * signX + startX),
+				(j * signY + startY)));
 			}
 			lasti = i;
 			lastj = j;
@@ -162,11 +160,20 @@ public class GenericCalculateProjection
 			}
 			// System.out.println("cannot j++ "+p+"
 			// "+fb.visitedNotObs.contains(p));
-			// no path, end here.
+			// no path, end here, after adding last point.
+			if (axesSwapped) {
+				path.add(new Point2I(
+						(j * signX + startX),
+						(i * signY + startY)));
+			} else {
+				path.add(new Point2I(
+				(i * signX + startX),
+				(j * signY + startY)));
+			}
 			break;
 		}
-//		if(pathx.lastElement()!=x1 || pathy.lastElement()!=y1)
-		return new Pair<Vector<Integer>, Vector<Integer>>(pathx, pathy);
+		
+		return path;
 	}
 	
 	public static interface VisitedBoard {

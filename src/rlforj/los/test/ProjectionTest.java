@@ -29,12 +29,10 @@ public class ProjectionTest
 		ILosAlgorithm alg = new ShadowCasting();
 		
 		boolean losExists = alg.existsLineOfSight(tb, 10, 10, x1, y1, true);
-		List<Integer> x=alg.getProjectPathX();
-		List<Integer> y = alg.getProjectPathY();
-		Iterator<Integer> xit = x.iterator(); Iterator<Integer> yit = y.iterator();
+		List<Point2I> path=alg.getProjectPath();
 		
-		while(xit.hasNext() && yit.hasNext()) {
-			int xx=xit.next(), yy=yit.next();
+		for(Point2I p:path) {
+			int xx=p.x, yy=p.y;
 			tb.mark(xx, yy, '-');
 		}
 		

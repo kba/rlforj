@@ -1,13 +1,10 @@
 package rlforj.los;
 
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
 import java.util.Vector;
 
 import rlforj.math.Point2I;
-import rlforj.util.Pair;
 
 /**
  * {@link http://roguebasin.roguelikedevelopment.org/index.php?title=Precise_Permissive_Field_of_View}
@@ -187,9 +184,7 @@ public class PrecisePermissive implements IFovAlgorithm, ILosAlgorithm
 		}
 	}
 
-	private Vector<Integer> pathx;
-
-	private Vector<Integer> pathy;
+	private Vector<Point2I> path;
 
 	void calculateFovQuadrant(final fovStateT state)
 	{
@@ -607,9 +602,7 @@ public class PrecisePermissive implements IFovAlgorithm, ILosAlgorithm
 
 		if (calculateProject)
 		{
-			Pair<Vector<Integer>, Vector<Integer>> ret = GenericCalculateProjection.calculateProjecton(startX, startY, x1, y1, fb);
-			pathx=ret.e1;
-			pathy=ret.e2;
+			path = GenericCalculateProjection.calculateProjecton(startX, startY, x1, y1, fb);
 //			calculateProjecton(startX, startY, adx, ady, fb, state);
 		}
 		return fb.endVisited;
@@ -758,21 +751,11 @@ public class PrecisePermissive implements IFovAlgorithm, ILosAlgorithm
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see sid.los.ILosAlgorithm1#getProjectPathX()
+	 * @see sid.los.ILosAlgorithm1#getProjectPath()
 	 */
-	public List<Integer> getProjectPathX()
+	public List<Point2I> getProjectPath()
 	{
-		return pathx;
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see sid.los.ILosAlgorithm1#getProjectPathY()
-	 */
-	public List<Integer> getProjectPathY()
-	{
-		return pathy;
+		return path;
 	}
 
 //	public static void main(String[] args)

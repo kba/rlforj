@@ -1,17 +1,9 @@
 package rlforj.los.test;
 
-import java.util.HashSet;
 import java.util.Random;
-import java.util.Set;
-
-import javax.management.RuntimeErrorException;
 
 import junit.framework.TestCase;
-
 import rlforj.los.IFovAlgorithm;
-import rlforj.los.ILosBoard;
-import rlforj.los.PrecisePermissive;
-import rlforj.los.raymulticast.MultiRaysCaster;
 import rlforj.math.Point2I;
 
 /**

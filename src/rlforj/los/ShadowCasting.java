@@ -9,11 +9,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Vector;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import rlforj.math.Point2I;
-import rlforj.util.Pair;
 
 /**
  * Code adapted from NG roguelike engine http://roguelike-eng.sourceforge.net/
@@ -32,8 +29,7 @@ public class ShadowCasting implements IConeFovAlgorithm, ILosAlgorithm
 
 	
 	public static final int MAX_CACHED_RADIUS = 40;
-	private Vector<Integer> pathy;
-	private Vector<Integer> pathx;
+	private Vector<Point2I> path;
 	
 	/**
 	 * Compute and return the list of RLPoints in line-of-sight to the given
@@ -241,22 +237,15 @@ public class ShadowCasting implements IConeFovAlgorithm, ILosAlgorithm
 		
 		if (calculateProject)
 		{
-			Pair<Vector<Integer>, Vector<Integer>> ret = GenericCalculateProjection.calculateProjecton(startX, startY, x1, y1, fb);
-			pathx = ret.e1;
-			pathy=ret.e2;
+			path = GenericCalculateProjection.calculateProjecton(startX, startY, x1, y1, fb);
 //			calculateProjecton(startX, startY, adx, ady, fb, state);
 		}
 		return fb.endVisited;
 	}
 
-	public List<Integer> getProjectPathX()
+	public List<Point2I> getProjectPath()
 	{
-		return pathx;
-	}
-
-	public List<Integer> getProjectPathY()
-	{
-		return pathy;
+		return path;
 	}
 
 	public void visitConeFieldOfView(ILosBoard b, int x, int y, int distance,
