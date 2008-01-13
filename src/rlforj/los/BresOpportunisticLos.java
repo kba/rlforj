@@ -3,7 +3,6 @@ package rlforj.los;
 import java.util.List;
 import java.util.Vector;
 
-import rlforj.los.test.TestBoard;
 import rlforj.math.Point2I;
 import rlforj.util.BresenhamLine;
 

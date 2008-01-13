@@ -32,6 +32,11 @@ public class ShadowCasting implements IConeFovAlgorithm, ILosAlgorithm
 	private Vector<Point2I> path;
 	
 	/**
+	 * When LOS not found, use Bresenham to find failed path
+	 */
+	BresLos fallBackLos=new BresLos(true);
+	
+	/**
 	 * Compute and return the list of RLPoints in line-of-sight to the given
 	 * region. In general, this method should be very fast.
 	 */
@@ -54,6 +59,7 @@ public class ShadowCasting implements IConeFovAlgorithm, ILosAlgorithm
 		// RLPoint p = RLPoint.point(r.x + i, r.y + j);
 		// points.add(p);
 		Point2I p = new Point2I(x, y);
+		b.visit(x, y);
 		go(b, p, 1, distance, 0.0, 359.9);
 		// }
 		// }
@@ -81,7 +87,7 @@ public class ShadowCasting implements IConeFovAlgorithm, ILosAlgorithm
 			ArcPoint arcPoint = circle.get(i);
 			int px = ctr.x + arcPoint.x;
 			int py = ctr.y + arcPoint.y;
-			Point2I point = new Point2I(px, py);
+//			Point2I point = new Point2I(px, py);
 
 			// if outside the board, ignore it and move to the next one
 			if (!board.contains(px, py))
@@ -237,7 +243,12 @@ public class ShadowCasting implements IConeFovAlgorithm, ILosAlgorithm
 		
 		if (calculateProject)
 		{
-			path = GenericCalculateProjection.calculateProjecton(startX, startY, x1, y1, fb);
+			if(fb.endVisited)
+				path = GenericCalculateProjection.calculateProjecton(startX, startY, x1, y1, fb);
+			else {
+				fallBackLos.existsLineOfSight(b, startX, startY, x1, y1, true);
+				path=(Vector<Point2I>)fallBackLos.getProjectPath();
+			}
 //			calculateProjecton(startX, startY, adx, ady, fb, state);
 		}
 		return fb.endVisited;
@@ -269,7 +280,7 @@ public class ShadowCasting implements IConeFovAlgorithm, ILosAlgorithm
 			throw new IllegalArgumentException();
 
 		Point2I p = new Point2I(x, y);
-		
+		b.visit(x, y);
 		if(startAngle>finishAngle) {
 			go(b, p, 1, distance, startAngle, 359.999);
 			go(b, p, 1, distance, 0.0, finishAngle);

@@ -41,7 +41,7 @@ public class PrecisePermissive implements IFovAlgorithm, ILosAlgorithm
 
 		public FovType fovType;
 
-		public int distSq;
+		public int distPlusOneSq;
 
 		ILosBoard board;
 	}
@@ -151,6 +151,10 @@ public class PrecisePermissive implements IFovAlgorithm, ILosAlgorithm
 		offsetT location;
 
 		bumpT parent = null;
+		
+		public String toString() {
+			return location.toString()+" p( "+parent+" ) ";
+		}
 	}
 
 	class fieldT
@@ -180,11 +184,12 @@ public class PrecisePermissive implements IFovAlgorithm, ILosAlgorithm
 		bumpT shallowBump;
 		
 		public String toString() {
-			return "[ "+steep+",  "+shallow+"]";
+			return "[ steep "+steep+",  shallow "+shallow+"]";
 		}
 	}
 
 	private Vector<Point2I> path;
+	private ILosAlgorithm fallBackLos=new BresLos(true);
 
 	void calculateFovQuadrant(final fovStateT state)
 	{
@@ -247,6 +252,7 @@ public class PrecisePermissive implements IFovAlgorithm, ILosAlgorithm
 			CLikeIterator<fieldT> currentField, LinkedList<bumpT> steepBumps,
 			LinkedList<bumpT> shallowBumps, LinkedList<fieldT> activeFields)
 	{
+//		System.out.println("-> "+steepBumps+" - "+shallowBumps);
 		// System.out.println("visitsq called "+dest);
 		// The top-left and bottom-right corners of the destination square.
 		offsetT topLeft = new offsetT(dest.x, dest.y + 1);
@@ -320,16 +326,13 @@ public class PrecisePermissive implements IFovAlgorithm, ILosAlgorithm
 			// case BETWEEN
 			// The square intersects neither line. We need to split into two
 			// fields.
-			fieldT steeperField = new fieldT(currentField.getCurrent());
-			fieldT shallowerField = currentField.getCurrent();
-			currentField.insertBeforeCurrent(steeperField);
-			// System.out.println("activeFields "+activeFields);
+			fieldT steeperField = currentField.getCurrent();
+			fieldT shallowerField = new fieldT(currentField.getCurrent());
+			currentField.insertBeforeCurrent(shallowerField);
 			addSteepBump(bottomRight, shallowerField, steepBumps, shallowBumps);
 			currentField.gotoPrevious();
 			if (!checkField(currentField)) // did not remove
 				currentField.gotoNext();// point to the original element
-//			System.out.println("B4 addShallowBumps "
-//					+ currentField.getCurrent());
 			addShallowBump(topLeft, steeperField, steepBumps, shallowBumps);
 			checkField(currentField);
 		}
@@ -341,11 +344,13 @@ public class PrecisePermissive implements IFovAlgorithm, ILosAlgorithm
 		// extremity, remove the field of view.
 		fieldT currFld = currentField.getCurrent();
 		boolean ret = false;
+
 		if (currFld.shallow.doesContain(currFld.steep.near)
 				&& currFld.shallow.doesContain(currFld.steep.far)
 				&& (currFld.shallow.doesContain(new offsetT(0, 1)) || currFld.shallow
 						.doesContain(new offsetT(1, 0))))
 		{
+//			System.out.println("removing "+currentField.getCurrent());
 			currentField.removeCurrent();
 			ret = true;
 		}
@@ -356,6 +361,7 @@ public class PrecisePermissive implements IFovAlgorithm, ILosAlgorithm
 	void addShallowBump(final offsetT point, fieldT currFld,
 			LinkedList<bumpT> steepBumps, LinkedList<bumpT> shallowBumps)
 	{
+//		System.out.println("Adding shallow "+point);
 		// First, the far point of shallow is set to the new point.
 		currFld.shallow.far = point;
 		// Second, we need to add the new bump to the shallow bump list for
@@ -381,6 +387,7 @@ public class PrecisePermissive implements IFovAlgorithm, ILosAlgorithm
 	void addSteepBump(final offsetT point, fieldT currFld,
 			LinkedList<bumpT> steepBumps, LinkedList<bumpT> shallowBumps)
 	{
+//		System.out.println("Adding steep "+point);
 		currFld.steep.far = point;
 		steepBumps.addLast(new bumpT());
 		steepBumps.getLast().location = point;
@@ -404,6 +411,9 @@ public class PrecisePermissive implements IFovAlgorithm, ILosAlgorithm
 		offsetT adjustedPos = new offsetT(pos.x * state.quadrant.x
 				+ state.source.x, pos.y * state.quadrant.y + state.source.y);
 
+		if(!state.board.contains(adjustedPos.x, adjustedPos.y))
+			return false;//we are getting outside the board
+		
 		// System.out.println("actIsBlocked "+adjustedPos.x+" "+adjustedPos.y);
 
 		// if ((state.quadrant.x * state.quadrant.y == 1
@@ -477,7 +487,7 @@ public class PrecisePermissive implements IFovAlgorithm, ILosAlgorithm
 			return 1;
 		else if (mask.fovType == FovType.CIRCLE)
 		{
-			if (x * x + y * y <= mask.distSq)
+			if (x * x + y * y < mask.distPlusOneSq)
 				return 1;
 			else
 				return 0;
@@ -491,7 +501,7 @@ public class PrecisePermissive implements IFovAlgorithm, ILosAlgorithm
 		mask.east = mask.north = mask.south = mask.west = distance;
 		mask.mask = null;
 		mask.fovType = FovType.CIRCLE;
-		mask.distSq = distance * distance;
+		mask.distPlusOneSq = (distance+1) * (distance+1);
 		mask.board = b;
 		permissiveFov(x, y, mask);
 	}
@@ -517,7 +527,7 @@ public class PrecisePermissive implements IFovAlgorithm, ILosAlgorithm
 		mask.north = mask.south = ady;
 		mask.mask = null;
 		mask.fovType = FovType.SQUARE;
-		mask.distSq = 0;
+		mask.distPlusOneSq = 0;
 		mask.board = fb;
 
 		fovStateT state = new fovStateT();
@@ -602,151 +612,16 @@ public class PrecisePermissive implements IFovAlgorithm, ILosAlgorithm
 
 		if (calculateProject)
 		{
-			path = GenericCalculateProjection.calculateProjecton(startX, startY, x1, y1, fb);
+			if(fb.endVisited)
+				path = GenericCalculateProjection.calculateProjecton(startX, startY, x1, y1, fb);
+			else {
+				fallBackLos.existsLineOfSight(b, startX, startY, x1, y1, true);
+				path=(Vector<Point2I>)fallBackLos.getProjectPath();
+			}
 //			calculateProjecton(startX, startY, adx, ady, fb, state);
 		}
 		return fb.endVisited;
 	}
-
-//	/**
-//	 * @param startX
-//	 * @param startY
-//	 * @param adx
-//	 * @param ady
-//	 * @param fb
-//	 * @param state
-//	 */
-//	private void calculateProjecton(int startX, int startY, int adx, int ady,
-//			FakeLosBoard fb, fovStateT state)
-//	{
-//		pathx = new Vector<Integer>();
-//		pathy = new Vector<Integer>();
-//		boolean axesSwapped = false;
-//		if (adx < ady)
-//		{
-//			axesSwapped = true;
-//			final int tmp = adx;
-//			adx = ady;
-//			ady = tmp;
-//		}
-//
-//		// System.out.println("adx ady "+adx+" "+ady);
-//		int incE = 2 * ady;
-//		int incNE = 2 * ady - 2 * adx;
-//		int d = 2 * ady - adx;
-//		Point2I p = new Point2I(0, 0);
-//		int lasti = 0, lastj = 0;
-//		int j = 0;
-//		int signX = state.quadrant.x, signY = state.quadrant.y;
-//		for (int i = 0; i <= adx;)
-//		{
-//			// System.out.println(i+" "+j);
-//			if (axesSwapped)
-//			{
-//				pathx.add(j * signX + startX);
-//				pathy.add(i * signY + startY);
-//			} else
-//			{
-//				pathx.add(i * signX + startX);
-//				pathy.add(j * signY + startY);
-//			}
-//			lasti = i;
-//			lastj = j;
-//			boolean ippNotrecommended = false;
-//			if (d <= 0)
-//			{
-//				// try to just inc x
-//				if (axesSwapped)
-//				{
-//					p.y = i + 1;
-//					p.x = j;
-//				} else
-//				{
-//					p.x = i + 1;
-//					p.y = j;
-//				}
-//				if (fb.visitedNotObs.contains(p))
-//				{
-//					d += incE;
-//					i++;
-//					continue;
-//				}
-//				// System.out.println("cannot i++ "+p+"
-//				// "+fb.visitedNotObs.contains(p));
-//			} else
-//			{
-//				// System.out.println("i++ not recommended ");
-//				ippNotrecommended = true;
-//			}
-//
-//			// try to inc x and y
-//			if (axesSwapped)
-//			{
-//				p.y = i + 1;
-//				p.x = j + 1;
-//			} else
-//			{
-//				p.x = i + 1;
-//				p.y = j + 1;
-//			}
-//			if (fb.visitedNotObs.contains(p))
-//			{
-//				d += incNE;
-//				j++;
-//				i++;
-//				continue;
-//			}
-//			// System.out.println("cannot i++ j++ "+p+"
-//			// "+fb.visitedNotObs.contains(p));
-//			if (ippNotrecommended)
-//			{ // try it even if not recommended
-//				if (axesSwapped)
-//				{
-//					p.y = i + 1;
-//					p.x = j;
-//				} else
-//				{
-//					p.x = i + 1;
-//					p.y = j;
-//				}
-//				if (fb.visitedNotObs.contains(p))
-//				{
-//					d += incE;
-//					i++;
-//					continue;
-//				}
-//				// System.out.println("cannot i++ "+p+"
-//				// "+fb.visitedNotObs.contains(p));
-//			}
-//			// last resort
-//			// try to inc just y
-//			if (axesSwapped)
-//			{
-//				p.y = i;
-//				p.x = j + 1;
-//			} else
-//			{
-//				p.x = i;
-//				p.y = j + 1;
-//			}
-//			if (fb.visitedNotObs.contains(p))
-//			{
-//				if (lasti == i - 1 && lastj == j)// last step was 1 to the
-//					// right
-//					System.out.println("<<-");// this step is 1 step to up,
-//				// together 1 diagonal
-//				// => we dont need last point
-//				d += -incE + incNE;// as if we went 1 step left then took 1
-//				// step up right
-//				j++;
-//				continue;
-//			}
-//			// System.out.println("cannot j++ "+p+"
-//			// "+fb.visitedNotObs.contains(p));
-//			// no path, end here.
-//			break;
-//		}
-//	}
 
 	/*
 	 * (non-Javadoc)

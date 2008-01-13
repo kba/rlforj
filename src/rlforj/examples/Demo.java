@@ -10,6 +10,6 @@ public class Demo
 		System.out.println("Cone Field of Vision Example \n");
 		ConeFovExample.main(new String[0]);
 		System.out.println("Line of Sight and Projection Example \n");
-		ProjectExample.main(new String[0]);
+		ProjectionExample.main(new String[0]);
 	}
 }

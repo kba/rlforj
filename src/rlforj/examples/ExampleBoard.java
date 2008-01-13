@@ -72,5 +72,10 @@ public class ExampleBoard implements ILosBoard  {
 			System.out.println();
 		}
 	}
+
+	public boolean wasVisited(int i, int j)
+	{
+		return visited[i][j];
+	}
 	
 }

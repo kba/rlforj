@@ -3,18 +3,21 @@ package rlforj.los;
 import java.util.List;
 import java.util.Vector;
 
-import rlforj.examples.ExampleBoard;
-import rlforj.los.test.TestBoard;
 import rlforj.math.Point2I;
 import rlforj.util.BresenhamLine;
 
 public class BresLos implements ILosAlgorithm
 {
 
-	public boolean SYMMETRIC_ENABLED=false;
+	boolean symmetricEnabled=false;
 	
 	private Vector<Point2I> path;
 	
+	public BresLos(boolean symmetric)
+	{
+		symmetricEnabled=symmetric;
+	}
+
 	public boolean existsLineOfSight(ILosBoard b, int startX, int startY,
 			int x1, int y1, boolean calculateProject)
 	{
@@ -27,11 +30,11 @@ public class BresLos implements ILosAlgorithm
 		
 		int[] px=new int[len], py=new int[len];
 		int[] px1=null, py1=null;
-		if(SYMMETRIC_ENABLED) {
+		if(symmetricEnabled) {
 			px1=new int[len]; py1=new int[len];
 		}
 		BresenhamLine.plot(startX, startY, x1, y1, px, py);
-		if(SYMMETRIC_ENABLED) {
+		if(symmetricEnabled) {
 			BresenhamLine.plot(x1, y1, startX, startY, px1, py1);
 		}
 
@@ -47,7 +50,7 @@ public class BresLos implements ILosAlgorithm
 			if(b.isObstacle(px[i], py[i]))
 				break;
 		}
-		if(!los && SYMMETRIC_ENABLED) {
+		if(!los && symmetricEnabled) {
 			Vector<Point2I> oldpath = path;
 			path=new Vector<Point2I>(len);
 			for(int i=len-1; i>-1; i--) {

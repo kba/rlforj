@@ -82,6 +82,7 @@ public class CLikeIterator<T>
 	}
 	
 	public void insertBeforeCurrent(T t) {
+		it.previous();
 		it.add(t);
 //		checkPrevNext();
 	}

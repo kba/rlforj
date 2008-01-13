@@ -10,7 +10,7 @@ import rlforj.los.PrecisePermissive;
 import rlforj.los.ShadowCasting;
 import rlforj.math.Point2I;
 
-public class ProjectExample
+public class ProjectionExample
 {
 
 	public static void main(String[] args)
@@ -26,8 +26,8 @@ public class ProjectExample
 		
 		displayProjection(new ShadowCasting(), "Shadowcasting", b, x1, y1);
 		displayProjection(new PrecisePermissive(), "Precise Permissive", b, x1, y1);
-		displayProjection(new BresLos(), "Bresenham", b, x1, y1);
-		BresLos bl=new BresLos(); bl.SYMMETRIC_ENABLED=true;
+		displayProjection(new BresLos(false), "Bresenham", b, x1, y1);
+		BresLos bl=new BresLos(true);
 		displayProjection(bl, "Symmetric Bresenham", b, x1, y1);
 		displayProjection(new BresOpportunisticLos(), "Opportunistic Bresenham", b, x1, y1);
 	}

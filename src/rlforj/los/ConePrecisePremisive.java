@@ -21,7 +21,7 @@ public class ConePrecisePremisive extends PrecisePermissive implements
 		mask.east = mask.north = mask.south = mask.west = distance;
 		mask.mask = null;
 		mask.fovType = FovType.CIRCLE;
-		mask.distSq = distance * distance;
+		mask.distPlusOneSq = (distance+1) * (distance+1);
 		mask.board = b;
 		permissiveConeFov(x, y, mask, startAngle, finishAngle);
 	}
@@ -60,11 +60,11 @@ public class ConePrecisePremisive extends PrecisePermissive implements
 		}
 		offsetT dest = new offsetT(0, 0);
 
-		// Visit the source square exactly once (in quadrant 1).
-		if (state.quadrant.x == 1 && state.quadrant.y == 1)
-		{
-			actIsBlockedCone(state, dest);
-		}
+//		// Visit the source square exactly once (in quadrant 1).
+//		if (state.quadrant.x == 1 && state.quadrant.y == 1)
+//		{
+//			actIsBlockedCone(state, dest);
+//		}
 
 		CLikeIterator<fieldT> currentField = new CLikeIterator<fieldT>(
 				activeFields.listIterator());
@@ -115,6 +115,9 @@ public class ConePrecisePremisive extends PrecisePermissive implements
 		// state.visit = visit;
 		// state.context = context;
 
+		//visit origin once
+		state.board.visit(sourceX, sourceY);
+		
 		final int quadrantCount = 4;
 		final offsetT quadrants[] = { new offsetT(1, 1), new offsetT(-1, 1),
 				new offsetT(-1, -1), new offsetT(1, -1) };
