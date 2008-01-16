@@ -85,7 +85,7 @@ public final class BresenhamLine {
 		xx = x1;
 		yy = y1;
 		
-		if (dx > 0)
+		if (dx > dy)
 			error = dx >> 1;
 		else
 			error = dy >> 1;
