@@ -5,7 +5,14 @@ import java.util.Set;
 
 import rlforj.math.Point2I;
 
-public class RecordVisitBoard implements ILosBoard, GenericCalculateProjection.VisitedBoard
+/**
+ * A LOS board that records points that were visited, while using another 
+ * board to decide obstacles.
+ * @author sdatta
+ *
+ */
+public class RecordVisitBoard implements ILosBoard, 
+			GenericCalculateProjection.VisitedBoard
 {
 
 	ILosBoard b;

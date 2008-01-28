@@ -21,6 +21,7 @@ public class GenericCalculateProjection
 	{
 		Vector<Point2I> path= new Vector<Point2I>();
 		
+		// calculate usual Bresenham values required.
 		int dx=x1-startX;
 		int dy=y1-startY;
 		int signX, signY;
@@ -49,9 +50,10 @@ public class GenericCalculateProjection
 		}
 
 		// System.out.println("adx ady "+adx+" "+ady);
-		int incE = 2 * ady;
-		int incNE = 2 * ady - 2 * adx;
-		int d = 2 * ady - adx;
+		//calculate the two error values.
+		int incE = 2 * ady; //error diff if x++
+		int incNE = 2 * ady - 2 * adx; // error diff if x++ and y++
+		int d = 2 * ady - adx; // starting error 
 		Point2I p = new Point2I(0, 0);
 		int lasti = 0, lastj = 0;
 		int j = 0;
@@ -69,7 +71,7 @@ public class GenericCalculateProjection
 			}
 			lasti = i;
 			lastj = j;
-			boolean ippNotrecommended = false;
+			boolean ippNotrecommended = false;//whether i++ is recommended
 			if (d <= 0)
 			{
 				// try to just inc x

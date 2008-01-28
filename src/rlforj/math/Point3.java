@@ -1,5 +1,10 @@
 package rlforj.math;
 
+/**
+ * 3D double precision point
+ * @author sdatta
+ *
+ */
 public class Point3
 {
 	double x, y, z;

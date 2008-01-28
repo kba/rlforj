@@ -1,7 +1,5 @@
 package rlforj.los;
 
-import static java.lang.Math.PI;
-import static java.lang.Math.atan2;
 import static java.lang.Math.floor;
 
 import java.util.ArrayList;
@@ -20,9 +18,7 @@ import rlforj.math.Point2I;
  * visiting each grid at most once, and is (for me) much simpler to implement
  * than octant oriented or non-recursive approaches. -TSS
  * 
- * @author sdatta
- * TODO : implement LOS
- * TODO : implement project
+ * @author TSS
  */
 public class ShadowCasting implements IConeFovAlgorithm, ILosAlgorithm
 {
@@ -304,17 +300,16 @@ public class ShadowCasting implements IConeFovAlgorithm, ILosAlgorithm
 			return "[" + x + "," + y + "=" + (int) (theta) + "/"
 					+ (int) (leading) + "/" + (int) (lagging);
 		}
-
+		
 		double angle(double y, double x)
 		{
-			double a1 = atan2(y, x);
-			if (a1 < 0)
-				a1 = 2 * PI + a1;
-			double a2 = 360.0 - a1 * 180.0 / PI;
-			if (a2 == 360.0)
-				a2 = 0;
-			return a2;
-		}
+			double a = Math.atan2(y, x);
+			a = Math.toDegrees(a);
+			a = 360.0 - a;
+			a%=360;
+			if(a<0) a+=360;
+			return a;
+		} 
 
 		ArcPoint(int dx, int dy)
 		{

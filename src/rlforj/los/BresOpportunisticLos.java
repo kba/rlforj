@@ -6,11 +6,18 @@ import java.util.Vector;
 import rlforj.math.Point2I;
 import rlforj.util.BresenhamLine;
 
+/**
+ * Bresenham LOS.
+ * Tries to reach destination along first path. If 
+ * obstacled, shifts to alternate path. If that is blocked,
+ * shift to first path again. Fails only if both are blocked
+ * at a point.
+ * @author sdatta
+ *
+ */
 public class BresOpportunisticLos implements ILosAlgorithm
 {
 
-	public boolean SYMMETRIC_ENABLED=true;
-	
 	private Vector<Point2I> path;
 	
 	public boolean existsLineOfSight(ILosBoard b, int startX, int startY,
@@ -25,17 +32,16 @@ public class BresOpportunisticLos implements ILosAlgorithm
 		
 		int[] px=new int[len], py=new int[len];
 		int[] px1=null, py1=null;
-		if(SYMMETRIC_ENABLED) {
-			px1=new int[len]; py1=new int[len];
-		}
+		px1=new int[len]; py1=new int[len];
+		
+		//Compute both paths
 		BresenhamLine.plot(startX, startY, x1, y1, px, py);
-		if(SYMMETRIC_ENABLED) {
-			BresenhamLine.plot(x1, y1, startX, startY, px1, py1);
-		}
+		BresenhamLine.plot(x1, y1, startX, startY, px1, py1);
 
 		boolean los=false;
 		boolean alternatePath=false;
 		for(int i=0; i<len; i++) {
+			// Have we reached the end ? In that case quit
 			if(px[i]==x1 && py[i]==y1) {
 				if(calculateProject){
 					path.add(new Point2I(px[i], py[i]));
@@ -43,28 +49,33 @@ public class BresOpportunisticLos implements ILosAlgorithm
 				los=true;
 				break;
 			}
+			// if we are on alternate path, is the path clear ?
 			if(alternatePath && !b.isObstacle(px1[len-i-1], py1[len-i-1])) {
 				if(calculateProject)
 					path.add(new Point2I(px1[len-i-1], py1[len-i-1]));
 				continue;
 			} else
-				alternatePath=false;
+				alternatePath=false;//come back to ordinary path
 			
+			//if on ordinary path, or alternate path was not clear
 			if(!b.isObstacle(px[i], py[i])) {
 				if(calculateProject) {
 					path.add(new Point2I(px[i], py[i]));
 				}
 				continue;
 			}
-			if(SYMMETRIC_ENABLED && !b.isObstacle(px1[len-i-1], py1[len-i-1])) {
+			//if ordinary path wasnt clear
+			if(!b.isObstacle(px1[len-i-1], py1[len-i-1])) {
 				if(calculateProject)
 					path.add(new Point2I(px1[len-i-1], py1[len-i-1]));
-				alternatePath=true;
+				alternatePath=true;//go on alternate path
 				continue;
 			}
+			if(calculateProject)
+				path.add(new Point2I(px1[len-i-1], py1[len-i-1]));
 			break;
 		}
-		// TODO Auto-generated method stub
+		
 		return los;
 	}
 

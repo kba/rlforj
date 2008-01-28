@@ -3,6 +3,14 @@ package rlforj.math;
 import java.awt.Point;
 import java.io.Serializable;
 
+/**
+ * A class encapsulating a 2D point, as integers
+ * 
+ * (Reason for existance: java.awt.Point uses double 
+ * and I wanted speed.)
+ * @author sdatta
+ *
+ */
 public class Point2I extends Point implements Serializable
 {
 

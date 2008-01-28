@@ -4,9 +4,21 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
+/**
+ * Some utilities.
+ * @author sdatta
+ *
+ */
 public class Utils
 {
 
+	/**
+	 * Given a resource name, retrieve a resource and return
+	 * the contents of the resource as a string.
+	 * In case of any problems, returns empty string.
+	 * @param resourceName
+	 * @return
+	 */
 	public static String getStringFromResource(String resourceName) {
 		InputStream iin=Utils.class.getResourceAsStream(resourceName);
 		if(iin==null){

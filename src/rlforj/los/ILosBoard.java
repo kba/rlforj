@@ -1,5 +1,13 @@
 package rlforj.los;
 
+/**
+ *  An interface board that allows visibility alogithms to 
+ * decide which points are in the board, which points are
+ * obstacles to this form of visibility, and visit those points
+ * on the board.
+ * @author sdatta
+ *
+ */
 public interface ILosBoard
 {
 

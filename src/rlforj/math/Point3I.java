@@ -1,5 +1,10 @@
 package rlforj.math;
 
+/**
+ * 3D integer precision point.
+ * @author sdatta
+ *
+ */
 public class Point3I
 {
 	int x, y, z;

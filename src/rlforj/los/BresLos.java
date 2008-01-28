@@ -6,6 +6,15 @@ import java.util.Vector;
 import rlforj.math.Point2I;
 import rlforj.util.BresenhamLine;
 
+/**
+ *  Bresenham LOS class.
+ *  Checks if a bresenham line can be drawn from 
+ * source to destination. If symmetric, also checks
+ * the alternate Bresenham line from destination to 
+ * source.
+ * @author sdatta
+ *
+ */
 public class BresLos implements ILosAlgorithm
 {
 
@@ -23,20 +32,16 @@ public class BresLos implements ILosAlgorithm
 	{
 		int dx=startX-x1, dy=startY-y1;
 		int adx=dx>0?dx:-dx, ady=dy>0?dy:-dy;
-		int len=(adx>ady?adx:ady) + 1;
+		int len=(adx>ady?adx:ady) + 1;//Max number of points on the path.
 		
 		if(calculateProject)
 			path=new Vector<Point2I>(len);
 		
+		// array to store path.
 		int[] px=new int[len], py=new int[len];
-		int[] px1=null, py1=null;
-		if(symmetricEnabled) {
-			px1=new int[len]; py1=new int[len];
-		}
+
+		//Start to finish path
 		BresenhamLine.plot(startX, startY, x1, y1, px, py);
-		if(symmetricEnabled) {
-			BresenhamLine.plot(x1, y1, startX, startY, px1, py1);
-		}
 
 		boolean los=false;
 		for(int i=0; i<len; i++) {
@@ -50,7 +55,14 @@ public class BresLos implements ILosAlgorithm
 			if(b.isObstacle(px[i], py[i]))
 				break;
 		}
+		// Direct path couldnt find LOS so try alternate path
 		if(!los && symmetricEnabled) {
+			int[] px1=null, py1=null;
+			// allocate space for alternate path
+			px1=new int[len]; py1=new int[len];
+			// finish to start path.
+			BresenhamLine.plot(x1, y1, startX, startY, px1, py1);
+			
 			Vector<Point2I> oldpath = path;
 			path=new Vector<Point2I>(len);
 			for(int i=len-1; i>-1; i--) {

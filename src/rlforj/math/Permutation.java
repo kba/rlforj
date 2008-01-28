@@ -2,7 +2,11 @@ package rlforj.math;
 
 import java.util.Random;
 
-
+/**
+ * Class to generate permutations.
+ * @author sdatta
+ *
+ */
 public class Permutation {
 
 	/**

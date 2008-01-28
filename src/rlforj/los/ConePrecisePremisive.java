@@ -2,6 +2,14 @@ package rlforj.los;
 
 import java.util.LinkedList;
 
+import rlforj.math.Point2I;
+
+/**
+ * Precise Permissive class for computing cone 
+ * field of view.
+ * @author sdatta
+ *
+ */
 public class ConePrecisePremisive extends PrecisePermissive implements
 		IConeFovAlgorithm
 {
@@ -11,6 +19,7 @@ public class ConePrecisePremisive extends PrecisePermissive implements
 		if(startAngle%90==0 && startAngle%360!=0) startAngle--;//we dont like to start at 90, 180, 270
 				// because it is screwed up by the "dont visit an axis twice" logic
 		
+		// normalize angled
 		if(startAngle<0) {startAngle%=360; startAngle+=360; }
 		if(finishAngle<0) {finishAngle%=360; finishAngle+=360; }
 		
@@ -26,6 +35,12 @@ public class ConePrecisePremisive extends PrecisePermissive implements
 		permissiveConeFov(x, y, mask, startAngle, finishAngle);
 	}
 
+	/**
+	 * Process one quadrant.
+	 * @param state
+	 * @param startAngle
+	 * @param finishAngle
+	 */
 	void calculateConeFovQuadrant(final coneFovState state, int startAngle, int finishAngle)
 	{
 //		 System.out.println("calcfovq called " + state.quadrantIndex + " "
@@ -35,12 +50,15 @@ public class ConePrecisePremisive extends PrecisePermissive implements
 		// activeFields is sorted from shallow-to-steep.
 		LinkedList<fieldT> activeFields = new LinkedList<fieldT>();
 		activeFields.addLast(new fieldT());
+		
+		// We decide the farthest cells that can be seen by the cone ( using 
+		// trigonometry.), then we set the active field to be in between them.
 		if(startAngle==0) {
-			activeFields.getLast().shallow.near = new offsetT(0, 1);
-			activeFields.getLast().shallow.far = new offsetT(state.extent.x, 0);
+			activeFields.getLast().shallow.near = new Point2I(0, 1);
+			activeFields.getLast().shallow.far = new Point2I(state.extent.x, 0);
 		} else {
-			activeFields.getLast().shallow.near = new offsetT(0, 1);
-			activeFields.getLast().shallow.far = new offsetT(
+			activeFields.getLast().shallow.near = new Point2I(0, 1);
+			activeFields.getLast().shallow.far = new Point2I(
 					(int) Math.ceil(Math.cos(Math.toRadians(startAngle))
 							* state.extent.x), 
 					(int) Math.floor(Math.sin(Math.toRadians(startAngle))
@@ -48,17 +66,17 @@ public class ConePrecisePremisive extends PrecisePermissive implements
 //			System.out.println(activeFields.getLast().shallow.isAboveOrContains(new offsetT(0, 10)));
 		}
 		if(finishAngle==90) {
-			activeFields.getLast().steep.near = new offsetT(1, 0);
-			activeFields.getLast().steep.far = new offsetT(0, state.extent.y);
+			activeFields.getLast().steep.near = new Point2I(1, 0);
+			activeFields.getLast().steep.far = new Point2I(0, state.extent.y);
 		} else {
-			activeFields.getLast().steep.near = new offsetT(1, 0);
-			activeFields.getLast().steep.far = new offsetT(
+			activeFields.getLast().steep.near = new Point2I(1, 0);
+			activeFields.getLast().steep.far = new Point2I(
 					(int) Math.floor(Math.cos(Math.toRadians(finishAngle))
 							* state.extent.x), 
 					(int) Math.ceil(Math.sin(Math.toRadians(finishAngle))
 					* state.extent.y));
 		}
-		offsetT dest = new offsetT(0, 0);
+		Point2I dest = new Point2I(0, 0);
 
 //		// Visit the source square exactly once (in quadrant 1).
 //		if (state.quadrant.x == 1 && state.quadrant.y == 1)
@@ -108,7 +126,7 @@ public class ConePrecisePremisive extends PrecisePermissive implements
 			int startAngle, int finishAngle)
 	{
 		coneFovState state = new coneFovState();
-		state.source = new offsetT(sourceX, sourceY);
+		state.source = new Point2I(sourceX, sourceY);
 		state.mask = mask;
 		state.board = mask.board;
 		// state.isBlocked = isBlocked;
@@ -119,13 +137,13 @@ public class ConePrecisePremisive extends PrecisePermissive implements
 		state.board.visit(sourceX, sourceY);
 		
 		final int quadrantCount = 4;
-		final offsetT quadrants[] = { new offsetT(1, 1), new offsetT(-1, 1),
-				new offsetT(-1, -1), new offsetT(1, -1) };
+		final Point2I quadrants[] = { new Point2I(1, 1), new Point2I(-1, 1),
+				new Point2I(-1, -1), new Point2I(1, -1) };
 
-		offsetT extents[] = { new offsetT(mask.east, mask.north),
-				new offsetT(mask.west, mask.north),
-				new offsetT(mask.west, mask.south),
-				new offsetT(mask.east, mask.south) };
+		Point2I extents[] = { new Point2I(mask.east, mask.north),
+				new Point2I(mask.west, mask.north),
+				new Point2I(mask.west, mask.south),
+				new Point2I(mask.east, mask.south) };
 		
 		int[] angles=new int[12];
 		angles[0]=0; angles[1]=90; angles[2]=180; angles[3]=270;
@@ -149,6 +167,8 @@ public class ConePrecisePremisive extends PrecisePermissive implements
 			}
 		}
 		angles[i]=finishAngle;
+		// Now angles[0..5] contains 0, 90, 180, 270, startAngle, finishAngle
+		// in sorted order.
 		int startIndex=0;		
 		for (i = 0; i < 6; i++)
 		{
@@ -157,7 +177,12 @@ public class ConePrecisePremisive extends PrecisePermissive implements
 			if (angles[i] == startAngle)
 				startIndex = i;
 		}
+		// Twice repeated, also foound out startAngle's index
 		
+		//effectively, what we do is:
+		// traverse startAngle -> next axis(say 90), 90->180,
+		// ...., some axis -> finishAngle.
+		// Or startAngle -> endAngle if in same quadrant
 		int stA=0, endA=0;
 		for(i=startIndex; i<12; i++)
 		{
@@ -195,14 +220,28 @@ public class ConePrecisePremisive extends PrecisePermissive implements
 		}
 	}
 	
-	void visitConeSquare(final coneFovState state, final offsetT dest,
+	/**
+	 * It is here so that actisBlockedCone is called
+	 * instead of actIsBlocked.
+	 * 
+	 * Note : I ( sdatta ) made the function name with Code added since 
+	 * I wasnt sure inheritance was working properly when I was debugging this code.
+	 * Maybe this code can be simplified ?
+	 * @param state
+	 * @param dest
+	 * @param currentField
+	 * @param steepBumps
+	 * @param shallowBumps
+	 * @param activeFields
+	 */
+	void visitConeSquare(final coneFovState state, final Point2I dest,
 			CLikeIterator<fieldT> currentField, LinkedList<bumpT> steepBumps,
 			LinkedList<bumpT> shallowBumps, LinkedList<fieldT> activeFields)
 	{
 		// System.out.println("visitsq called "+dest);
 		// The top-left and bottom-right corners of the destination square.
-		offsetT topLeft = new offsetT(dest.x, dest.y + 1);
-		offsetT bottomRight = new offsetT(dest.x + 1, dest.y);
+		Point2I topLeft = new Point2I(dest.x, dest.y + 1);
+		Point2I bottomRight = new Point2I(dest.x + 1, dest.y);
 //		System.out.println(dest);
 		// fieldT currFld=null;
 
@@ -306,18 +345,19 @@ public class ConePrecisePremisive extends PrecisePermissive implements
 		}
 	}
 	
-	boolean actIsBlockedCone(final coneFovState state, final offsetT pos)
+	/**
+	 * Visit the square, also decide if it is blocked
+	 * @param state
+	 * @param pos
+	 * @return
+	 */
+	boolean actIsBlockedCone(final coneFovState state, final Point2I pos)
 	{
-		final offsetT stateQuadrant = state.quadrant;
-		offsetT adjustedPos = new offsetT(pos.x * stateQuadrant.x
+		final Point2I stateQuadrant = state.quadrant;
+		Point2I adjustedPos = new Point2I(pos.x * stateQuadrant.x
 				+ state.source.x, pos.y * stateQuadrant.y + state.source.y);
-
-//		System.out.println(adjustedPos);
-//		System.out.println((pos.x==0 && state.quadrant.y>0 && !state.axisDone[1])
-//				+" "+ (pos.x==0 && state.quadrant.y<0 && !state.axisDone[3])
-//				+" "+ (pos.y==0 && state.quadrant.x>0 && !state.axisDone[0])
-//				+" "+ (pos.y==0 && state.quadrant.x<0 && !state.axisDone[2])
-//				+" "+ (pos.x!=0 && pos.y!=0) );
+		
+		//Keep track of which axes are done.
 		if (
 				   (pos.x==0 && stateQuadrant.y>0 && !state.axisDone[1])
 				|| (pos.x==0 && stateQuadrant.y<0 && !state.axisDone[3])

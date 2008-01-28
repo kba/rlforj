@@ -1,5 +1,10 @@
 package rlforj.los;
 
+/**
+ * Exception thrown by LOS algorithms.
+ * @author sdatta
+ *
+ */
 public class LosException extends RuntimeException
 {
 
