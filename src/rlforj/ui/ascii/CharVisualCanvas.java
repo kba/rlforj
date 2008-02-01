@@ -333,6 +333,18 @@ public class CharVisualCanvas extends JLabel
 		return size;
 	}
 	
+	@Override
+	public Dimension getMinimumSize()
+	{
+		return size;
+	}
+	
+	@Override
+	public Dimension getMaximumSize()
+	{
+		return size;
+	}
+	
 	/**
 	 * draw the visible part of the backbuffer, while centering it.
 	 * 
