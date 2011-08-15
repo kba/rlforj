@@ -17,6 +17,12 @@ public class Line2I
 		far = newFar;
 	}
 
+	public Line2I(int x1, int y1, int x2, int y2)
+	{
+	    near = new Point2I(x1, y1);
+	    far = new Point2I(x2, y2);
+	}
+	
 	public boolean isBelow(final Point2I point)
 	{
 		return relativeSlope(point) > 0;

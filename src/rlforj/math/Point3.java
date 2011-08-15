@@ -7,10 +7,19 @@ package rlforj.math;
  */
 public class Point3
 {
-	double x, y, z;
+	public double x, y, z;
 
+    public Point3(double x, double y, double z)
+    {
+        super();
+        this.x = x;
+        this.y = y;
+        this.z = z;
+    }
+    
 	public Point3(double[] d)
 	{
+	    super();
 		x=d[0]; y=d[1]; z=d[2];
 	}
 	
@@ -48,5 +57,9 @@ public class Point3
 		return true;
 	}
 	
-	
+	@Override
+	public String toString() {
+		return "[ "+x+", "+y+", "+z+" ]";
+	}
+
 }

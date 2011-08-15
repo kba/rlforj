@@ -1,14 +1,21 @@
 package rlforj.los.raymulticast;
 
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.Set;
+
+import com.sun.swing.internal.plaf.basic.resources.basic;
 
 import rlforj.los.IFovAlgorithm;
 import rlforj.los.ILosBoard;
+import rlforj.los.PrecisePermissive;
+import rlforj.los.ShadowCasting;
+import rlforj.los.test.TestBoard;
 import rlforj.math.Point2I;
 
 /**
- * TODO: Not yet incorporated, not yet working.
+ * TODO: It works now but with many undesirable behaviors.
  * 
  * Casts rays from a single point through a {@link World} object, which describes 
  * impassable locations. Fills in a 2D array of {@link RayData} objects, 
@@ -24,7 +31,7 @@ import rlforj.math.Point2I;
  * http://www.geocities.com/temerra/los_rays.html
  * argus2
  */
-public class MultiRaysCaster implements IFovAlgorithm{
+public class MultiRaysCaster implements IFovAlgorithm {
 	
 	private ILosBoard world; // holds obstruction data
 	private Point2I origin; // the point at which the rays will be cast from
@@ -35,10 +42,16 @@ public class MultiRaysCaster implements IFovAlgorithm{
 	
 	public void visitFieldOfView(ILosBoard b, int x, int y, int distance)
 	{
-		MultiRaysCaster m=new MultiRaysCaster(b, x, y, distance);
+		this.world = b; 
+		this.origin = new Point2I(x, y);
+		this.perimeter = new LinkedList<RayData>();
+		this.results = new RayData[2*distance+1][2*distance+1];
+		
+		offset = new Point2I(distance, distance);
+		dsq=distance*distance;
 		b.visit(x, y);
-		m.castRays();
-		m.printResults();
+		castRays();
+//		printResults();
 	}
 	
 	public MultiRaysCaster(ILosBoard world, int originX, int originY, int radius) {
@@ -74,7 +87,7 @@ public class MultiRaysCaster implements IFovAlgorithm{
 			// to be added to current data by the time it is removed.
 			mergeInputs(currentData);
 
-			if(currentData.toChar()=='O')//TODO:change this to better check
+			if(!currentData.obscure())
 				world.visit(origin.x+currentData.xLoc, origin.y+currentData.yLoc);
 			
 			if(!currentData.ignore) expandPerimeterFrom(currentData);
@@ -138,6 +151,8 @@ public class MultiRaysCaster implements IFovAlgorithm{
 	// task of populating the new ray with the correct data. 
 	private void mergeInputs(RayData newRay) {
 
+//		if(newRay.obscure())
+//			world.visit(origin.x + newRay.xLoc, origin.y + newRay.yLoc);
 		// Obstructions must propagate obscurity.
 		if( world.isObstacle((origin.x + newRay.xLoc), 
 			   				 (origin.y + newRay.yLoc)) ) {
@@ -241,6 +256,52 @@ public class MultiRaysCaster implements IFovAlgorithm{
 			System.out.println();
 		}
 		System.out.println();
+	}
+	
+	public static void main(String[] args)
+	{
+		TestBoard1 b=new TestBoard1(false);
+		b.exception.add(new Point2I(11, 11));
+		b.exception.add(new Point2I(7, 8));
+		MultiRaysCaster m=new MultiRaysCaster();
+		m.visitFieldOfView(b, 10, 10, 10);
+		System.out.println(b.obsNotVisited);
+		b.mark(10, 10, '@');
+		b.print(0, 20, 0, 20);
+		
+//		System.out.println(b.chkb4visit);
+		
+//		b.visited.clear();
+//		IFovAlgorithm pp=new ShadowCasting();
+//		pp.visitFieldOfView(b, 10, 10, 3);
+//		b.mark(10, 10, '@');
+//		b.print(0, 20, 0, 20);
+	}
+	
+	private static class TestBoard1 extends TestBoard {
+
+		public Set<Point2I> obsNotVisited=new HashSet<Point2I>();
+		
+		public TestBoard1(boolean defaultObscured)
+		{
+			super(defaultObscured);
+		}
+		
+		@Override
+		public void visit(int x, int y)
+		{
+			super.visit(x, y);
+			System.out.println("Visiting "+x+" "+y);
+			obsNotVisited.remove(new Point2I(x, y));
+		}
+		
+		@Override
+		public boolean isObstacle(int x, int y)
+		{
+			System.out.println("isObs "+x+" "+y);
+			obsNotVisited.add(new Point2I(x, y));
+			return super.isObstacle(x, y);
+		}
 	}
 	
 }

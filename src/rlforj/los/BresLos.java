@@ -77,7 +77,8 @@ public class BresLos implements ILosAlgorithm
 					break;
 			}
 			
-			path=oldpath.size()>path.size()?oldpath:path;
+			if(calculateProject)
+				path=oldpath.size()>path.size()?oldpath:path;
 		}
 
 		return los;

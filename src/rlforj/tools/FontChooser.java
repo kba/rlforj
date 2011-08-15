@@ -17,6 +17,7 @@ import static java.awt.font.TextAttribute.WEIGHT_BOLD;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Dialog;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
@@ -24,7 +25,6 @@ import java.awt.Graphics;
 import java.awt.GraphicsEnvironment;
 import java.awt.GridLayout;
 import java.awt.Insets;
-import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.font.TextAttribute;
@@ -51,7 +51,6 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 import javax.swing.ListCellRenderer;
 import javax.swing.ListModel;
-import javax.swing.ToolTipManager;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.EtchedBorder;
 import javax.swing.border.LineBorder;
@@ -96,8 +95,10 @@ public class FontChooser extends JDialog {
   private static final String PREVIEW_TEXT = "The Quick Brown Fox Jumped Over The Lazy Dog";
 
 
-  public FontChooser(Window owner) {
-    super(owner, "Font Chooser", ModalityType.APPLICATION_MODAL);
+  public FontChooser(Dialog owner) {
+    super(owner, "Font Chooser");
+    setModal(true);
+    
     GraphicsEnvironment ge = GraphicsEnvironment
 	    .getLocalGraphicsEnvironment();
 	fontNames = ge.getAvailableFontFamilyNames();
@@ -330,7 +331,7 @@ public class FontChooser extends JDialog {
   
   public static void main(String argv[]) {
 
-    FontChooser dlg = new FontChooser(new JFrame());
+    FontChooser dlg = new FontChooser(null);
     SimpleAttributeSet a = new SimpleAttributeSet();
     StyleConstants.setFontFamily(a, "Monospaced");
     StyleConstants.setFontSize(a, 12);

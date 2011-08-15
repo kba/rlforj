@@ -5,6 +5,11 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionListener;
+import java.awt.event.MouseWheelEvent;
+import java.awt.event.MouseWheelListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.awt.geom.AffineTransform;
@@ -36,8 +41,10 @@ public class CharDesigner
 	{
 		//TODO: move all to constructor
 		final AffineTransform transform=AffineTransform.getScaleInstance(5, 5);
+		new CharVisualCanvas();//force initialize
 		final CharVisual cv=new CharVisual('X', Color.white);
-		cv.font=new Font("Courier New", Font.PLAIN, 10);
+		cv.font=CharVisualCanvas.getBaseFont();
+//		cv.font=new Font("Courier New", Font.PLAIN, 10);
 		final CharVisualCanvas cvc=new CharVisualCanvas(new ICharDisplayable() {
 
 			public boolean contains(int x, int y)
@@ -86,6 +93,79 @@ public class CharDesigner
 		});
 		cvc.setTileTransform(transform);
 		cvc9.setTileTransform(AffineTransform.getScaleInstance(2.5, 2.5));
+		
+		cvc.addMouseWheelListener(new MouseWheelListener(){
+
+			public void mouseWheelMoved(MouseWheelEvent e) {
+				if (e.getWheelRotation() > 0)
+					applyTransformToCV(cv, cvc, cvc9, AffineTransform.getScaleInstance(.9, .9));
+				else
+					applyTransformToCV(cv, cvc, cvc9, AffineTransform.getScaleInstance(1.1, 1.1));
+			}
+			
+		});
+		
+		class DragMoveRot implements MouseListener, MouseMotionListener
+		{
+			int lastx, lasty;
+			int button;
+			public void mouseClicked(MouseEvent e) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			public void mouseEntered(MouseEvent e) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			public void mouseExited(MouseEvent e) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			public void mousePressed(MouseEvent e) {
+				lastx = e.getX();
+				lasty = e.getY();
+				button = e.getButton();
+				System.out.println("Press "+e.getButton());
+			}
+
+			public void mouseReleased(MouseEvent e) {
+				System.out.println("release");
+			}
+
+			public void mouseDragged(MouseEvent e) {
+				System.out.println("drag "+lastx+" "+lasty+" "+e.getX()+" "+e.getY());
+				System.out.println("Button "+e.getButton());
+				if (button == MouseEvent.BUTTON1)
+				{
+					applyTransformToCV(cv, cvc, cvc9,
+						AffineTransform.getTranslateInstance(
+								(e.getX() - lastx)/10.0, (e.getY() - lasty)/10.0));
+				}
+				else if (button == MouseEvent.BUTTON3)
+				{
+					double angle = Math.atan2(e.getY(), e.getX());
+					double lastangle = Math.atan2(lasty, lastx);
+					applyTransformToCV(cv, cvc, cvc9,
+							AffineTransform.getRotateInstance(angle - lastangle));
+					
+				}
+				lastx = e.getX();
+				lasty = e.getY();
+			}
+
+			public void mouseMoved(MouseEvent e) {
+				// TODO Auto-generated method stub
+				
+			}
+			
+		}
+		
+		DragMoveRot quickTransform = new DragMoveRot();
+		cvc.addMouseMotionListener(quickTransform);
+		cvc.addMouseListener(quickTransform);
 		
 		final JFrame jf=new JFrame();
 		
@@ -267,7 +347,7 @@ public class CharDesigner
 		
 		ta.setEditable(false);
 		ta.setBackground(Color.white);
-		ta.setFont(new Font("Courier New", Font.PLAIN, 13));
+		ta.setFont(new Font("Monospaced", Font.PLAIN, 13));
 		refreshCode(cv);
 		ta.setBorder(BorderFactory.createEtchedBorder());
 		
@@ -337,7 +417,6 @@ public class CharDesigner
 	}
 	
 	static void refreshCode(CharVisual cv) {
-		Font f=cv.font;
 		StringBuilder sb=new StringBuilder();
 		sb.append("CharVisual cv=new CharVisual((char)").append((int)cv.disp)
 		.append(", new Color(")
@@ -346,36 +425,43 @@ public class CharDesigner
 			.append(cv.col.getBlue())
 		.append("));\n");
 		
-		sb.append("cv.font=new Font(\"").append(f.getFamily()).append("\", ");
-		
-		boolean style=false;
-		if(f.isPlain())
-			sb.append("Font.PLAIN");
-		if(f.isBold()) {
-			style=true;
-			sb.append("Font.BOLD");
-		}
-		if(f.isItalic()) {
-			if(style)
-				sb.append("+");
-			sb.append("Font.ITALIC");
-		}
-		sb.append(", ");
-		
-		sb.append(f.getSize()).append(");\n");
-		AffineTransform t=f.getTransform();
-		if(!t.isIdentity()){
-			double[] mat=new double[6];
-			t.getMatrix(mat);
-			sb.append("cv.font=cv.font.deriveFont(new AffineTransform(new double[]{\n\t");
-			for(int i=0; i<6; i++){
-				sb.append(mat[i]).append(", ");
-				if(i==2)
-					sb.append("\n\t");
+		if(cv.font!=null) {
+			Font f=cv.font;
+			
+			if(f.equals(CharVisualCanvas.getBaseFont())) {
+				sb.append("cv.font=CharVisualCanvas.getBaseFont();\n");
+			} else {
+				sb.append("cv.font=new Font(\"").append(f.getFamily()).append("\", ");
+				
+				boolean style=false;
+				if(f.isPlain())
+					sb.append("Font.PLAIN");
+				if(f.isBold()) {
+					style=true;
+					sb.append("Font.BOLD");
+				}
+				if(f.isItalic()) {
+					if(style)
+						sb.append("+");
+					sb.append("Font.ITALIC");
+				}
+				sb.append(", ");
+				
+				sb.append(f.getSize()).append(");\n");
 			}
-			sb.append(" }));");
+			AffineTransform t=f.getTransform();
+			if(!t.isIdentity()){
+				double[] mat=new double[6];
+				t.getMatrix(mat);
+				sb.append("cv.font=cv.font.deriveFont(new AffineTransform(new double[]{\n\t");
+				for(int i=0; i<6; i++){
+					sb.append(mat[i]).append(", ");
+					if(i==2)
+						sb.append("\n\t");
+				}
+				sb.append(" }));");
+			}
 		}
-
 		ta.setText(sb.toString());
 	}
 }

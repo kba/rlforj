@@ -465,7 +465,7 @@ public class PrecisePermissive implements IFovAlgorithm, ILosAlgorithm
 		int adx = dx > 0 ? dx : -dx;
 		int dy = y1 - startY;
 		int ady = dy > 0 ? dy : -dy;
-		RecordVisitBoard fb = new RecordVisitBoard(b, startX, startY, x1, y1,
+		RecordQuadrantVisitBoard fb = new RecordQuadrantVisitBoard(b, startX, startY, x1, y1,
 				calculateProject);
 		mask.east = mask.west = adx;
 		mask.north = mask.south = ady;

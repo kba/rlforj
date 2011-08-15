@@ -13,6 +13,9 @@ public interface ILosBoard
 
 	/**
 	 * Is the location (x, y) inside the board ?
+	 * Note: If a point is outside, any radially 
+	 * outward points are not checked, so the area must 
+	 * be concave.
 	 * @param x
 	 * @param y
 	 * @return

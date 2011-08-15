@@ -1,9 +1,13 @@
 package rlforj.ui.ascii;
 
+import java.awt.AlphaComposite;
 import java.awt.Color;
+import java.awt.Component;
+import java.awt.Composite;
 import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.FontFormatException;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -12,6 +16,7 @@ import java.awt.Image;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
+import java.awt.Transparency;
 import java.awt.event.MouseEvent;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
@@ -25,6 +30,8 @@ import javax.imageio.ImageIO;
 import javax.swing.JLabel;
 import javax.swing.JToolTip;
 import javax.swing.JViewport;
+import javax.swing.Scrollable;
+import javax.swing.SwingConstants;
 import javax.swing.ToolTipManager;
 
 import rlforj.math.Point2I;
@@ -37,7 +44,7 @@ import rlforj.ui.MultiLineToolTip;
  * 
  * The size of the font can be changed , or any 
  * AffineTransform can be applied to all displayed characters
- * usinng setFontSize(int size) or setTileTransform(AffineTransform tr).
+ * using setFontSize(int size) or setTileTransform(AffineTransform tr).
  * 
  * The character to be displayed is encapsulated in a 
  * CharVisual class. The class can also have a different font
@@ -54,7 +61,7 @@ import rlforj.ui.MultiLineToolTip;
  * @author sdatta
  *
  */
-public class CharVisualCanvas extends JLabel
+public class CharVisualCanvas extends JLabel implements Scrollable
 {
 
 	/**
@@ -65,7 +72,18 @@ public class CharVisualCanvas extends JLabel
 	/**
 	 * The base default font.
 	 */
-	protected static final Font baseFont=new Font("Courier New", Font.PLAIN, 10);
+	protected static Font baseFont;
+	static {
+		try {
+			baseFont = Font.createFont(Font.TRUETYPE_FONT, CharVisualCanvas.class
+					.getResourceAsStream("/fonts/dejavu/DejaVuSansMono.ttf"))
+					.deriveFont(10f);
+		} catch (Exception e) {
+			e.printStackTrace();
+			baseFont=new Font("Monospaced", Font.PLAIN, 10);
+		} 
+			
+	}
 
 	/**
 	 * Current font to use to display, usually baseFont with an 
@@ -139,6 +157,8 @@ public class CharVisualCanvas extends JLabel
 	 * size of the font, also any other fancy effects if required.
 	 */
 	AffineTransform currentTransform=new AffineTransform();//identity
+
+    Composite composite;
 	
 	/**
 	 * CharVisualDisplay with empty map.
@@ -157,10 +177,11 @@ public class CharVisualCanvas extends JLabel
 	{
 		FontMetrics fm=getFontMetrics(f);
 		
-		fontW=fm.getMaxAdvance();
+		fontW=fm.charWidth('X');//fm.getMaxAdvance();
 		fontH=fm.getMaxAscent()+fm.getMaxDescent()+fm.getLeading();
 		offsety=fm.getMaxAscent();
-
+		System.out.println("Size "+fontW+" "+fontH);
+		
 		if(wmap!=null)
 			size=new Dimension(fontW*wmap.getWidth(), fontH*wmap.getHeight());
 		else
@@ -174,10 +195,9 @@ public class CharVisualCanvas extends JLabel
 		if(wmap!=null)
 			setMap(wmap);
 		
-//		setIcon(new ImageIcon(backImage));
 //		setBackground(Color.black);
-//		setHorizontalAlignment(SwingConstants.CENTER);
-//		setVerticalAlignment(SwingConstants.CENTER);
+		setHorizontalAlignment(SwingConstants.CENTER);
+		setVerticalAlignment(SwingConstants.CENTER);
 	}
 
 	/**
@@ -201,8 +221,9 @@ public class CharVisualCanvas extends JLabel
 		f=baseFont.deriveFont(currentTransform);
 		FontMetrics fm=getFontMetrics(f);
 		
-		fontW=fm.getMaxAdvance();
+		fontW=fm.getMaxAdvance(); //hack
 		fontH=fm.getMaxAscent()+fm.getMaxDescent()+fm.getLeading();
+//		System.out.println("Size "+fontW+" "+fontH);
 //		offsety=fm.getMaxAscent();
 		
 		forceRedrawAll();
@@ -223,6 +244,12 @@ public class CharVisualCanvas extends JLabel
 		invalidate();
 	}
 
+	@Override
+	public int getWidth() {return size.width; };
+	
+	@Override
+	public int getHeight() {return size.height; };
+	
 	/**
 	 * Create a backbuffer image which can display all the characters
 	 */
@@ -231,7 +258,8 @@ public class CharVisualCanvas extends JLabel
 		this.size=new Dimension(fontW*cacheW, fontH*cacheH+2);
 		backImage=GraphicsEnvironment.getLocalGraphicsEnvironment()
 		.getDefaultScreenDevice().getDefaultConfiguration()
-		.createCompatibleImage(this.size.width, this.size.height);
+		.createCompatibleImage(this.size.width, this.size.height,
+		        Transparency.TRANSLUCENT);
 		
 //		setIcon(new ImageIcon(backImage));
 	}
@@ -282,7 +310,7 @@ public class CharVisualCanvas extends JLabel
 		Graphics2D g=backImage.createGraphics();
 		g.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
                 RenderingHints.VALUE_ANTIALIAS_ON);
-		
+		g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC));
 		g.setFont(f);
 		
 //		g.setColor(Color.BLACK);
@@ -299,25 +327,32 @@ public class CharVisualCanvas extends JLabel
 //					g.fillRect(i*fontW, offsety+j*fontH-fontH+1, fontW, fontH);
 					
 					CharVisual cv=cacheChars[idx];
-					char c=' '; Color col=transparent;
+//					char c=' '; Color col=transparent;
+//					if(cv!=null)
+//					{
+//						c=((CharVisual)cv).disp;
+//						col=((CharVisual)cv).col;
+////						if(cv.font!=null)
+////							g.setFont(cv.font);
+////						else
+////							g.setFont(f);
+//					}
+					
 					if(cv!=null)
 					{
-						c=((CharVisual)cv).disp;
-						col=((CharVisual)cv).col;
-//						if(cv.font!=null)
-//							g.setFont(cv.font);
-//						else
-//							g.setFont(f);
+    					Image im=rendered.get(cv);
+    					if(im==null) {
+    						im=createRenderedImage(cv);
+    						rendered.put(cv, im);
+    					}
+    					
+    					g.drawImage(im, i*fontW, j*fontH, this);
 					}
-					
-					Image im=rendered.get(cv);
-					if(im==null) {
-						im=createRenderedImage(cv);
-						rendered.put(cv, im);
+					else
+					{
+					    g.setColor(transparent);
+					    g.fillRect(i*fontW, j*fontH, fontW, fontH);
 					}
-					
-					g.drawImage(im, i*fontW, j*fontH, this);
-					
 //					g.setClip(i*fontW, j*fontH, fontW, fontH);
 //					g.setColor(col);
 //					g.drawString(Character.toString(c), i*fontW, offsety+j*fontH);
@@ -373,9 +408,19 @@ public class CharVisualCanvas extends JLabel
 				imageStartY = (r1.height - ih) / 2;
 		}
 
+		Graphics2D g2 = (Graphics2D) g;
+		Composite oldC = null;
+		if(composite != null)
+		{
+    		oldC = g2.getComposite();
+    		g2.setComposite(composite);
+		}
 		g.drawImage(backImage, r.x, r.y, r.x+r.width, r.y+r.height, 
 				r.x-imageStartX, r.y-imageStartY, //negative start coords for image seem to be automatically handled
 				r.x-imageStartX+r.width, r.y-imageStartY+r.height, this);
+		
+		if(composite != null)
+		    g2.setComposite(oldC);
 	}
 	
 	/**
@@ -396,14 +441,24 @@ public class CharVisualCanvas extends JLabel
 	}
 	
 	/**
+	 * Given x, y as a MouseEvent provides, returns which cell/tile is it on
+	 * @param x
+	 * @param y
+	 * @return
+	 */
+	public Point2I screenToCellCoords(int x, int y)
+	{
+		return new Point2I((x - imageStartX) / fontW, (y - imageStartY) / fontH);
+	}
+	
+	/**
 	 * Used to implement tile tooltip display.
 	 */
 	@Override
 	public String getToolTipText(MouseEvent e) {
-		return (infoProvider==null)?null:
-			infoProvider.getTileInfo((e
-				.getX() - imageStartX)
-				/ fontW, (e.getY() - imageStartY) / fontH);
+		return (infoProvider == null) ? null : infoProvider.getTileInfo(
+				(e.getX() - imageStartX) / fontW,
+				(e.getY() - imageStartY) / fontH);
 	}
 
 	/**
@@ -412,8 +467,8 @@ public class CharVisualCanvas extends JLabel
 	@Override
 	public Point getToolTipLocation(MouseEvent e){
 		Point p= e.getPoint();//returns a new point
-		p.x=p.x-(p.x%fontW)+fontW/2;
-		p.y=p.y-(p.y%fontH)+fontH/2;
+		p.x=p.x-(p.x%fontW)+fontW;
+		p.y=p.y-(p.y%fontH)+fontH;
 		
 		return p;
 	}
@@ -475,7 +530,7 @@ public class CharVisualCanvas extends JLabel
 	 * Problem: if x is close to edge, but also close to edge of map hence 
 	 * cannot be centered, and y is not close to edge of viewport, then 
 	 * this function is always true, which leads to always centering behavior
-	 *  which is not what we are trying to do eith this function
+	 *  which is not what we are trying to do with this function
 	 * @param x
 	 * @param y
 	 * @param percentage
@@ -593,6 +648,8 @@ public class CharVisualCanvas extends JLabel
 		.createCompatibleImage(fontW, fontH);
 		
 		Graphics2D g2=im.createGraphics();
+		g2.setColor(cv.bgCol);
+		g2.fillRect(0, 0, fontW, fontH);
 		if(cv.font!=null)
 			g2.setFont(cv.font);
 		else
@@ -614,4 +671,47 @@ public class CharVisualCanvas extends JLabel
 	{
 		return currentTransform;
 	}
+	
+	public static Font getBaseFont() {
+		return baseFont;
+	}
+	
+	public Point2I getTileCoords(Point loc)
+	{
+	    int x = (int) (loc.getX()/fontW);
+	    int y = (int) (loc.getY()/fontH);
+	    
+	    return new Point2I(x, y);
+	}
+
+   public Dimension getPreferredScrollableViewportSize()
+    {
+        return getPreferredSize();
+    }
+
+    public int getScrollableBlockIncrement(Rectangle visibleRect,
+            int orientation, int direction)
+    {
+        return getScrollableUnitIncrement(visibleRect, orientation, direction)
+                                * 10;
+    }
+
+    public boolean getScrollableTracksViewportHeight()
+    {
+        return false;
+    }
+
+    public boolean getScrollableTracksViewportWidth()
+    {
+        return false;
+    }
+	    
+    public int getScrollableUnitIncrement(Rectangle visibleRect,
+            int orientation, int direction)
+    {
+        if (orientation == SwingConstants.HORIZONTAL)
+            return fontW;
+        else
+            return fontH;
+    }
 }

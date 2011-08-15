@@ -36,4 +36,13 @@ public class Point2I extends Point implements Serializable
 	{
 		return "Point2I[ "+x+", "+y+" ]";
 	}
+	public int getIx()
+	{
+		return x;
+	}
+
+	public int getIy()
+	{
+		return y;
+	}
 }

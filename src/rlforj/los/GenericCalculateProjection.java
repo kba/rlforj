@@ -59,7 +59,21 @@ public class GenericCalculateProjection
 		int j = 0;
 		for (int i = 0; i <= adx;)
 		{
-//			 System.out.println(i+" "+j+" "+d);
+			lasti = i;
+			lastj = j;
+			if(axesSwapped){
+				i=p.y; j=p.x;
+			} else {
+				i=p.x; j=p.y;
+			}
+			 System.out.println("GCP loop "+i+" "+j+" d "+d);
+			 if(d<-2*adx) System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+			if(i>adx || j>ady) // searching outside range
+			{
+				System.out.println("Outside range "+i+" "+j+" "+adx+" "+ady);
+				break;
+			}
+			
 			if (axesSwapped) {
 				path.add(new Point2I(
 						(j * signX + startX),
@@ -69,8 +83,13 @@ public class GenericCalculateProjection
 				(i * signX + startX),
 				(j * signY + startY)));
 			}
-			lasti = i;
-			lastj = j;
+			System.out.println("Added to path "+path.lastElement());
+			if(i==adx && j==ady)//end reached and recorded
+			{
+				System.out.println("End reached and recorded ");
+				break;
+			}
+			
 			boolean ippNotrecommended = false;//whether i++ is recommended
 			if (d <= 0)
 			{
@@ -84,10 +103,10 @@ public class GenericCalculateProjection
 					p.x = i + 1;
 					p.y = j;
 				}
-				if (fb.wasVisited(p.x, p.y))
+				if (fb.wasVisited(p.x, p.y) || /* end */ (i==adx && j==ady))
 				{
 					d += incE;
-					i++;
+//					i++;
 					continue;
 				}
 				// System.out.println("cannot i++ "+p+"
@@ -108,11 +127,11 @@ public class GenericCalculateProjection
 				p.x = i + 1;
 				p.y = j + 1;
 			}
-			if (fb.wasVisited(p.x, p.y))
+			if (fb.wasVisited(p.x, p.y) || /* end */ (i==adx && j==ady))
 			{
 				d += incNE;
-				j++;
-				i++;
+//				j++;
+//				i++;
 				continue;
 			}
 			// System.out.println("cannot i++ j++ "+p+"
@@ -128,10 +147,10 @@ public class GenericCalculateProjection
 					p.x = i + 1;
 					p.y = j;
 				}
-				if (fb.wasVisited(p.x, p.y))
+				if (fb.wasVisited(p.x, p.y) || /* end */ (i==adx && j==ady))
 				{
 					d += incE;
-					i++;
+//					i++;
 					continue;
 				}
 				// System.out.println("cannot i++ "+p+"
@@ -148,16 +167,19 @@ public class GenericCalculateProjection
 				p.x = i;
 				p.y = j + 1;
 			}
-			if (fb.wasVisited(p.x, p.y))
+			if (fb.wasVisited(p.x, p.y) || /* end */ (i==adx && j==ady))
 			{
+				System.out.println("GCP y++ "+i+" "+j+" last "+lasti+" "+lastj);
 				if (lasti == i - 1 && lastj == j)// last step was 1 to the
 					// right
-					System.out.println("<<-");// this step is 1 step to up,
+					System.out.println("<<- GenericCalculateProj check code");
+				// this step is 1 step to up,
 				// together 1 diagonal
 				// => we dont need last point
+				
 				d += -incE + incNE;// as if we went 1 step left then took 1
 				// step up right
-				j++;
+//				j++;
 				continue;
 			}
 			// System.out.println("cannot j++ "+p+"

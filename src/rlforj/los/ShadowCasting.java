@@ -212,7 +212,7 @@ public class ShadowCasting implements IConeFovAlgorithm, ILosAlgorithm
 			ady=-dy;
 			signY=-1;
 		}
-		RecordVisitBoard fb = new RecordVisitBoard(b, startX, startY, x1, y1,
+		RecordQuadrantVisitBoard fb = new RecordQuadrantVisitBoard(b, startX, startY, x1, y1,
 				calculateProject);
 
 		Point2I p = new Point2I(startX, startY);

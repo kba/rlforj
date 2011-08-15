@@ -3,31 +3,41 @@ package rlforj.tools;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Container;
+import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.FontFormatException;
 import java.awt.FontMetrics;
+import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
-import java.awt.Window;
-import java.awt.Dialog.ModalityType;
+import java.awt.RenderingHints;
+import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.io.File;
+import java.io.IOException;
 
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JDialog;
+import javax.swing.JFileChooser;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.ToolTipManager;
 import javax.swing.WindowConstants;
+import javax.swing.filechooser.FileFilter;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
+
+import rlforj.ui.ascii.CharVisualCanvas;
 
 public class CharChooser extends JComponent implements MouseListener
 {
@@ -47,8 +57,17 @@ public class CharChooser extends JComponent implements MouseListener
 	private char selChar=5;
 	private Character returnChar=selChar;
 	
+	public JDialog masterDialog;
+	String fontDirectory=null;
 	public CharChooser() {
-		setFont(new Font("Courier New", Font.PLAIN, 10));
+		try {
+			setFont( Font.createFont(Font.TRUETYPE_FONT, CharVisualCanvas.class
+					.getResourceAsStream("/fonts/dejavu/DejaVuSansMono.ttf"))
+					.deriveFont(10f));
+		} catch (Exception e) {
+			e.printStackTrace();
+			setFont(new Font("Monospaced", Font.PLAIN, 10));
+		} 
 //		System.out.println("SetFont "+getFont());
 		addMouseListener(this);
 		
@@ -66,19 +85,20 @@ public class CharChooser extends JComponent implements MouseListener
 
 	}
 	
-	public void displayDialog(Window owner) {
-		final JDialog jf=new JDialog(owner, "Choose Character", ModalityType.APPLICATION_MODAL);
+	public void displayDialog(Frame owner) {
+		final JDialog jf=new JDialog(owner, "Choose Character");
+		jf.setModal(true);
+		masterDialog=jf;
+		
 		jf.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
 		
 		final Container contentPane = jf.getContentPane();
 		contentPane.setLayout(new BorderLayout());
-		JButton button = new JButton("Choose font");
 		final CharChooser charChooser = this;
-		
 		
 		final FontChooser fc=new FontChooser(jf);
 	    SimpleAttributeSet a = new SimpleAttributeSet();
-	    StyleConstants.setFontFamily(a, "Courier New");
+	    StyleConstants.setFontFamily(a, "Monospaced");
 	    StyleConstants.setFontSize(a, 10);
 	    fc.setAttributes(a);
 	    
@@ -88,6 +108,7 @@ public class CharChooser extends JComponent implements MouseListener
 		final JLabel fontLabel=new JLabel("Displayable characters in Font: "+charChooser.getFont().getFamily());
 		north.add(fontLabel);
 		north.add(Box.createHorizontalStrut(20));
+		JButton button = new JButton("Choose font");
 		north.add(button);
 		contentPane.add(north, BorderLayout.NORTH);
 		
@@ -111,7 +132,42 @@ public class CharChooser extends JComponent implements MouseListener
 			
 		});
 		
-		contentPane.add(new JScrollPane(charChooser));
+		JButton openFont = new JButton("Open font from file");
+		north.add(openFont);
+		openFont.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				JFileChooser d=new JFileChooser();
+				if(fontDirectory!=null)
+					d.setCurrentDirectory(new File(fontDirectory));
+				d.addChoosableFileFilter(new FileFilter() {
+					@Override
+					public boolean accept(File f) {
+						return f.isDirectory() || f.getName().toLowerCase().endsWith("ttf");
+					}
+					@Override
+					public String getDescription() {
+						return "Trutype Fonts";
+					}
+				});
+				int response=d.showDialog(masterDialog, "Ok");
+				if(response==JFileChooser.APPROVE_OPTION) {
+					File f=d.getSelectedFile();
+					try {
+						Font font=Font.createFont(Font.TRUETYPE_FONT, f).deriveFont((float)10);
+						charChooser.setFont(font);
+						fontDirectory=f.getParent();
+					} catch (FontFormatException e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					} catch (IOException e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					}
+				}
+			}
+		});
+		JScrollPane jsp = new JScrollPane(charChooser);
+		contentPane.add(jsp);
 		
 		JPanel bottom=new JPanel();
 		JButton ok=new JButton("Ok");
@@ -136,6 +192,12 @@ public class CharChooser extends JComponent implements MouseListener
 		
 		bottom.add(ok);
 		bottom.add(cancel);
+		Dimension scrSz=Toolkit.getDefaultToolkit().getScreenSize();
+		scrSz.height-=20;
+		jf.setMaximumSize(scrSz);
+		jf.setPreferredSize(scrSz);
+//		scrSz.height-=30;
+//		jsp.setSize(scrSz);
 		jf.pack();
 		jf.setVisible(true);
 		
@@ -143,6 +205,7 @@ public class CharChooser extends JComponent implements MouseListener
 	
 	@Override
 	public void setFont(Font f) {
+//		System.out.println("Setting font "+f);
 		f=f.deriveFont((float)f.getSize2D()+5);
 		super.setFont(f);
 		
@@ -174,7 +237,16 @@ public class CharChooser extends JComponent implements MouseListener
 //		System.out.println(" "+dispC.length+" "+fontw+" "+fonth);
 		setSize(fontw*NUM_COLS+30, fonth*dispC.length+10);
 		setPreferredSize(getSize());
-		invalidate();
+//		invalidate();
+		if(masterDialog!=null) {
+//			masterDialog.pack();
+			
+//			Dimension scrSz=Toolkit.getDefaultToolkit().getScreenSize();
+//			scrSz.height-=20; scrSz=new Dimension(100, 100);
+//			masterDialog.setMaximumSize(scrSz);
+		}
+//		else
+//			validate();
 	}
 	
 	@Override
@@ -193,7 +265,8 @@ public class CharChooser extends JComponent implements MouseListener
 	@Override
 	public void paintComponent(Graphics g){
 		Graphics2D g2=(Graphics2D) g.create();
-		
+		g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
+				RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 		g2.setColor(Color.white);
 		g2.fill(g.getClip());
 		
